@@ -6,8 +6,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 static const std::string OPENCV_WINDOW = "Image window";
+static const std::string OPENCV_WINDOW2 = "Image window2";
+
+using std::vector;
 
 class ImageConverter
 {
@@ -15,7 +19,11 @@ class ImageConverter
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
- std::vector< cv::Point2f > corners, old_vector;
+std::vector<cv::Point2f> corners;
+std::vector<cv::Point2f> old_vector;
+
+  //std::array<cv::Point2f> corners[4];
+  //std::array<cv::Point2f> old_vector[4]; 
 cv::Point2f testpt;
 int maxCorners, blockSize;
 double qualityLevel, minDistance, k;
@@ -44,14 +52,16 @@ public:
 	blockSize = 3;
 	useHarrisDetector = false;
 	k = 0.04;
+old_vector.resize(4);
 	
-
     cv::namedWindow(OPENCV_WINDOW);
+    cv::namedWindow(OPENCV_WINDOW2);
   }
 
   ~ImageConverter()
   {
     cv::destroyWindow(OPENCV_WINDOW);
+    cv::destroyWindow(OPENCV_WINDOW2);
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -84,20 +94,26 @@ cv::Mat result_hsv, result_thrshld, result_dil, result_erd;
 hsv_image.copyTo(result_hsv, red_hue_mask);
 
 cv::cvtColor(result_hsv, bw_image, CV_BGR2GRAY); //cv::COLOR_BGR2GRAY
-cv::threshold(bw_image,result_thrshld,215,255,0);
+cv::threshold(bw_image,result_thrshld,130,255,0);
 
-cv::erode(result_thrshld,result_erd,cv::MORPH_RECT);
-cv::dilate(result_erd,result_dil,cv::MORPH_RECT);
+int erosion_size = 5; 
+cv::Mat element = getStructuringElement(cv::MORPH_RECT,
+              cv::Size(2 * erosion_size + 1, 2 * erosion_size + 1),
+              cv::Point(erosion_size, erosion_size) );
+	
+
+cv::erode(result_thrshld,result_erd,element);
+cv::dilate(result_erd,result_dil,element);
 
 
-  cv::goodFeaturesToTrack( result_dil, corners, maxCorners, qualityLevel, minDistance, mask, blockSize, useHarrisDetector, k );
+  cv::goodFeaturesToTrack(result_dil, corners, maxCorners, qualityLevel, minDistance, mask, blockSize, useHarrisDetector, k );
 
 counter_x = 0;
 counter_y = 0;
 
   for( size_t i = 0; i < corners.size(); i++ )
     {
-    cv::circle(bw_image, corners[i], 10, cv::Scalar( 255. ), -1 );
+    cv::circle(result_dil, corners[i], 10, cv::Scalar( 255. ), -1 );
 //    ROS_INFO("Corner %lu is at: %f %f", i, corners[i].y,corners[i].x);
 	counter_x+=corners[i].x;
 	counter_y+=corners[i].y;
@@ -109,7 +125,7 @@ mean_y = counter_y/corners.size();
 //testpts[0].y = mean_y;
 testpt.x = mean_x;
 testpt.y = mean_y;
-cv::circle(bw_image, testpt,15,cv::Scalar(255.));
+cv::circle(result_dil, testpt,15,cv::Scalar(255.));
 
 
 //Now, we need to identify the four squares:
@@ -118,15 +134,22 @@ cv::circle(bw_image, testpt,15,cv::Scalar(255.));
 
 
 //Now populate the old vector, for the next iteration
+for(std::vector<cv::Point2f>::size_type i = 0; i < corners.size(); i++) {
+//ROS_INFO("IN FOR LOOP %d, %d", i, corners.size());
+  //  old_vector.push_back(cv::Point2f(corners[i].y-mean_y,corners[i].x-mean_x)); // This works too
+  old_vector[i] = cv::Point2f(corners[i].y-mean_y,corners[i].x-mean_x);
+}
+
 /*
-  for( size_t i = 0; i < corners.size(); i++ )
+for(std::vector<cv::Point2f>::size_type i = 0; i <= corners.size(); i++)
     {
 // x and y for CV Mats are not the "x,y" we think of for images, but rather more like matrices - i.e. "y" first, then "x". This may be wrong.
 	old_vector[i] = cv::Point2f(corners[i].y-mean_y,corners[i].x-mean_x);
-    }*/
-
+    }
+*/
     // Update GUI Window
-    cv::imshow(OPENCV_WINDOW, bw_image);
+    cv::imshow(OPENCV_WINDOW2, result_erd);
+    cv::imshow(OPENCV_WINDOW, result_dil);
     cv::waitKey(3);
 
     // Output modified video stream
