@@ -158,8 +158,8 @@ target_link_libraries(goodfeatures ${catkin_LIBRARIES})
 add_executable(test_publisher src/test_publisher.cpp)
 target_link_libraries(test_publisher ${catkin_LIBRARIES})
 
-add_executable(make_video src/make_video.cpp)
-target_link_libraries(make_video ${catkin_LIBRARIES})
+#add_executable(make_video src/make_video.cpp)
+#target_link_libraries(make_video ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############
