@@ -41,12 +41,13 @@ class ImageConverter
 
 	// Function declarations
 	void imageCb(const sensor_msgs::ImageConstPtr& msg);
-	std::vector<cv::Point2f> pvt_identify_pt(std::vector<cv::Point2f> pts_to_identify, std::vector<cv::Point2f> old_vec);
-
+    int pvt_identify_pt(std::vector<cv::Point2f> &pts_to_identify, std::vector<cv::Point2f> &old_vec);
+    //std::vector<cv::Point2f> pvt_identify_pt(std::vector<cv::Point2f> pts_to_identify, std::vector<cv::Point2f> old_vec);
 public:
 	ImageConverter()
 		: it_(nh_)
 	{
+    ROS_INFO("In constructor1");
     // Subscrive to input video feed and publish output video feed
     image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
       &ImageConverter::imageCb, this);
@@ -58,12 +59,14 @@ public:
 	minDistance = 20;
 	blockSize = 3;
 	useHarrisDetector = false;
-	k = 0.04;
+    ROS_INFO("In constructor2");
+    k = 0.04;
 	//We want old vector to have size of number of points, plus one for the mean
 	old_vector.resize(NUMPTS+1);
 	
 	cv::namedWindow(OPENCV_WINDOW);
 	cv::namedWindow(OPENCV_WINDOW2);
+    ROS_INFO("In constructor3");
 	}
 
 	~ImageConverter()
@@ -76,6 +79,7 @@ public:
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "image_converter");
+    ROS_INFO("In main1");
 	ImageConverter ic;
 	ros::spin();
 	return 0;
@@ -132,10 +136,16 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 	//Now, we need to identify which of the four corners is which:
 	// Have created the pvt_..._... function to handle this. Essentially, it will check which of the four squares is closest to which for the next iteration.
 	// Essentially, we want to re-assign values of corners for the 
-std::vector<cv::Point2f> test2;
-test2.resize(4);
 
+
+/*
+ std::vector<cv::Point2f> test2;
+test2.resize(4);
 test2 = pvt_identify_pt(corners,old_vector);
+*/
+
+    int j;
+    j = pvt_identify_pt(corners, old_vector);
 
 	//counters for calculating the mean of all four points.
 	counter_x = 0;
@@ -145,7 +155,7 @@ test2 = pvt_identify_pt(corners,old_vector);
 	{
 		// Add a circle around the detected corners
 		cv::circle(result_dil, corners[i], 10, cv::Scalar( 50. ), -1 );
-		cv::circle(result_dil, test2[i], 10, cv::Scalar( 50. ), -1 );
+        //cv::circle(result_dil, test2[i], 10, cv::Scalar( 50. ), -1 );
 		cv::circle(result_dil, old_vector[i], 10, cv::Scalar( 50. ), -1 );
 
 		// Create a string with just the number we would like to display.
@@ -156,7 +166,7 @@ test2 = pvt_identify_pt(corners,old_vector);
 
 		//Add numbering to the four points discovered.
 		cv::putText( result_dil, display_string, corners[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
-		cv::putText( result_dil, display_string, test2[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
+        //cv::putText( result_dil, display_string, test2[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
 
 
 		//    ROS_INFO("Corner %lu is at: %f %f", i, corners[i].y,corners[i].x);
@@ -188,12 +198,18 @@ test2 = pvt_identify_pt(corners,old_vector);
 }// end ImageConverter::imageCb
 
 
-
-std::vector<cv::Point2f> ImageConverter::pvt_identify_pt(std::vector<cv::Point2f> pts_to_identify, std::vector<cv::Point2f> old_vec)
+int ImageConverter::pvt_identify_pt(std::vector<cv::Point2f> &pts_to_identify, std::vector<cv::Point2f> &old_vec)
+//std::vector<cv::Point2f> ImageConverter::pvt_identify_pt(std::vector<cv::Point2f> pts_to_identify, std::vector<cv::Point2f> old_vec)
 {
 
-	// This is a vector of vectors (aka a matrix), 4x4 in most cases, and it will house the distance from each point to the other.
-	float rtn_vec[NUMPTS][NUMPTS];
+    std::cout << pts_to_identify[0];
+    std::cout << pts_to_identify[1];
+    std::cout << pts_to_identify[2];
+    std::cout << pts_to_identify[3] << std::endl;
+
+
+    // This is a vector of vectors (aka a matrix), 4x4 in most cases, and it will house the distance from each point to the other.
+    float rtn_vec[NUMPTS][NUMPTS];
 	
 	for(int i=0; i<pts_to_identify.size();i++) 
 	{
@@ -209,8 +225,9 @@ std::vector<cv::Point2f> ImageConverter::pvt_identify_pt(std::vector<cv::Point2f
 	// We now have a 4x4 matrix populated by the distances to nearby points.
 	// We essentially want to select the lowest sum possible that still incorporates all distances.
 	// The code below calculates all possible combinations for the point movements, and will select the minimum one.
-	std::vector<float> sum_dist_vec(24);
-	int min_dist_ind = 0;
+    std::vector<float> sum_dist_vec(24);
+    sum_dist_vec.resize(24);
+    int min_dist_ind = 0;
 	int index = 0;
 	int order[NUMPTS];
 	
@@ -249,16 +266,29 @@ for (int i = 0; i < NUMPTS; i++)
 	}//endfor
 }
 
-std::vector<cv::Point2f> test;
-test.resize(4);
+std::cout << "Just before declaring test";
+
+std::vector<cv::Point2f> output_vector;
+output_vector.resize(4);
+
+std::cout << "Values: " << order[0] << order[1] << order[2] << order[3];
 
 
-for (int p = 0; p < NUMPTS; p++)
+for (int p = 0; p < 4; p++)
 {
-	test[order[p]] = pts_to_identify[p];
+    int index = order[p];
+    std::cout << "In the for loop" << index;
+    output_vector[p] = cv::Point2f(1*p,0);
+    std::cout << "output vector : " << output_vector << std::endl;
+    //output_vector[index].x = pts_to_identify[p].x;
+   // output_vector[index].y = pts_to_identify[p].y;
+     std::cout << pts_to_identify[p];
 }
 
-	return test;
+
+
+    //return output_vector;
+return 0;
 } // end pvt_identify_pt
 
 
