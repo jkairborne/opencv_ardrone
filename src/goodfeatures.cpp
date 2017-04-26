@@ -163,8 +163,8 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
     for( size_t i = 0; i < corners.size(); i++ )
     {
         // Add a circle around the detected corners
-        cv::circle(result_dil, corners[i], 5, cv::Scalar( 50. ), -1 );
-        cv::circle(cv_ptr->image, (old_vector[i]+old_vector[NUMPTS]), 5, cv::Scalar( 50. ), -1 );
+        cv::circle(result_dil, old_vector[i]+old_vector[4], 5, cv::Scalar( 50. ), -1 );
+        cv::circle(cv_ptr->image, output_vector[i], 5, cv::Scalar( 50. ), -1 );
         //cv::circle(result_dil, old_vector[i], 10, cv::Scalar( 50. ), -1 );
 
         // Create a string with just the number we would like to display.
@@ -174,8 +174,8 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
         display_string = out.str();
 
         //Add numbering to the four points discovered.
-        cv::putText( result_dil, display_string, corners[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
-        cv::putText( cv_ptr->image, display_string, (old_vector[i]+old_vector[NUMPTS]), CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
+        cv::putText( result_dil, display_string, old_vector[i]+old_vector[4], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
+        cv::putText( cv_ptr->image, display_string, (output_vector[i]), CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
     }
 
     //Now populate the old vector, for the next iteration
@@ -208,56 +208,66 @@ void ImageConverter::pvt_identify_pt()
             {
             // Calculate distance from each old vector (and the mean)
             rtn_vec[i][j] = distance_calc((old_vector[j]+meanPt),corners[i]);
+            std::cout << rtn_vec[i][j] << "  ";
 		}// end of internal nested for
+        std::cout << std::endl;
 	} // end of external nested for
 
-    float sum_dist_vec[4] = {0,0,0,0};
+    float sum_dist_vec[24];
     int min_dist_ind = 0;
+	int index = 0;
+    int order[NUMPTS] = {0,1,2,3};
 
-	// We now have a 4x4 matrix populated by the distances to nearby points.
-	// We essentially want to select the lowest sum possible that still incorporates all distances.
-    // The code below calculates the various ways of shifting the rectangle
-    for (int i = 0; i<NUMPTS; i++)
+    for (int i = 0; i < NUMPTS; i++)
     {
-        //This for loop basically adds up values along the diagonals of our matrix
-        for (int j = 0; j<NUMPTS; j++)
+        for(int j = 0; j < NUMPTS; j++)
         {
-            int k = within_bounds(j+i);
-            sum_dist_vec[i] += rtn_vec[j][k];
-        } // end inner for
-        if (sum_dist_vec[i] < sum_dist_vec[min_dist_ind])
-        {
-            min_dist_ind = i;
-        } // end if
-    } // end outer for
+            if (i!=j)
+            {
+                for(int k=0; k <NUMPTS; k++)
+                {
+                    if (i!=k && j!=k)
+                    {
+                        for (int m=0; m<NUMPTS; m++)
+                        {
+                            if (i!=m && j!=m && k!=m)
+                            {
+                                //std::cout << "i : " << i << " j : " << j << " k : " << k << " m : " << m;
+                                sum_dist_vec[index] = rtn_vec[0][i] + rtn_vec[1][j] + rtn_vec[2][k] + rtn_vec[3][m];
+                                std::cout << sum_dist_vec[index] << "  ";
+                                if (sum_dist_vec[index] < sum_dist_vec[min_dist_ind])
+                                {
+                                    min_dist_ind = index;
+                                    order[0] = i;
+                                    order[1] = j;
+                                    order[2] = k;
+                                    order[3] = m;
+                                    std::cout << std::endl << "New minimum found - order is now" << i << j << k <<m << '\n';
+                                }
+                                index++;
 
-
-
-    // We now have an offset number. Now offset the
-    for (int p = 0; p < NUMPTS; p++)
-    {
-        int new_index = within_bounds(p+min_dist_ind);
-        output_vector[new_index] = corners[p];
+                            }
+                        }
+                    }
+                }
+            }//endif
+        }//endfor
+    std::cout<< std::endl;
     }
-    std::cout << "old corners : " <<\
-                 old_vector[0]+old_vector[4] << "   " <<\
-                 old_vector[1]+old_vector[4] << "   " <<\
-                 old_vector[2]+old_vector[4] << "   " <<\
-                 old_vector[3]+old_vector[4] << \
-                 std::endl;
-    std::cout << "input corners : " <<\
-                 corners[0] << "   " <<\
-                 corners[1] << "   " <<\
-                 corners[2] << "   " <<\
-                 corners[3] << "   " <<
-                 std::endl;
-    std::cout << "shift index: " << min_dist_ind;
-    std::cout << "output corners : " <<\
-                 output_vector[0] << "   " <<\
-                 output_vector[1] << "   " <<\
-                 output_vector[2] << "   " <<\
-                 output_vector[3] << "   " <<
-                 std::endl << std::endl;
+
+
+
+    for (int p = 0; p < 4; p++)
+    {
+        int index2 = order[p];
+        output_vector[index2] = corners[p];
+    }
+     std::cout << "Values: " << order[0] << order[1] << order[2] << order[3] << std::endl;
+         std::cout << "Old vector" << old_vector[NUMPTS]+old_vector[0] << "  " << old_vector[NUMPTS]+old_vector[1] << "  " <<\
+                      old_vector[NUMPTS]+old_vector[2] << "  " << old_vector[NUMPTS]+old_vector[3] << "  " <<std::endl;
+    std::cout << "Input vector" << corners[0] << "  " << corners[1] << "  " << corners[2] << "  " << corners[3] << "  " <<std::endl;
+    std::cout << "Output vector" << output_vector[0] << "  " << output_vector[1] << "  " << output_vector[2] << "  " << output_vector[3] << "  " <<std::endl;
+    std::cout << std::endl;
 } // end pvt_identify_pt
 
 
