@@ -158,6 +158,11 @@ target_link_libraries(goodfeatures ${catkin_LIBRARIES})
 add_executable(test_publisher src/test_publisher.cpp)
 target_link_libraries(test_publisher ${catkin_LIBRARIES})
 
+add_executable(rec_video src/rec_video.cpp)
+target_link_libraries(rec_video ${catkin_LIBRARIES})
+
+add_executable(camshift src/camshift.cpp)
+target_link_libraries(camshift ${catkin_LIBRARIES})
 #add_executable(make_video src/make_video.cpp)
 #target_link_libraries(make_video ${catkin_LIBRARIES})
 #############

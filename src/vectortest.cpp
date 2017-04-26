@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <sstream>
 
+int within_bounds(int index);
+
 int main ()
 {
 int NUMPTS = 4;	
@@ -15,76 +17,65 @@ int NUMPTS = 4;
 		for(int j = 0; j < (4); j++)
 			{
 			// Calculate distance from each old point (except the last one, which corresponds to the mean
-			rtn_vec[i][j] = rand() % 25;
+			rtn_vec[i][j] = rand() % 12 + rand()% 13 + rand() % 15;
+			std::cout << rtn_vec[i][j] << "  ";
 		}// end of internal nested for
+	std::cout << std::endl;
 	} // end of external nested for
+std::cout <<std::endl;
 
-
-
-    float sum_dist_vec[24];
+    float sum_dist_vec[4] = {0,0,0,0};
     int min_dist_ind = 0;
-	int index = 0;
-    int order[NUMPTS];
-    
-for (int i = 0; i < NUMPTS; i++)
-{
-	for(int j = 0; j < NUMPTS; j++)
-	{
-		if (i!=j)
-		{
-			for(int k=0; k <NUMPTS; k++)
-			{
-				if (i!=k && j!=k)
-				{
-					for (int m=0; m<NUMPTS; m++)
-					{
-						if (i!=m && j!=m && k!=m)
-						{
-							std::cout << "i : " << i << " j : " << j << " k : " << k << " m : " << m;
-							sum_dist_vec[index] = rtn_vec[0][i] + rtn_vec[1][j] + rtn_vec[2][k] + rtn_vec[3][m];
-							if (sum_dist_vec[index] < sum_dist_vec[min_dist_ind]) 
-							{
-								min_dist_ind = index;
-								order[0] = i;
-								order[1] = j;
-								order[2] = k;
-								order[3] = m;
-								std::cout << std::endl<< "Values: " << order[0] << order[1] << order[2] << order[3]<< std::endl;
-							}
-							std::cout << ", minimum index is: " << min_dist_ind << std::endl;
-							index++;
-						}
-					}
-				}
-			}
-		}//endif 
-	}//endfor
-}
-//std::cout << "Just before declaring test";
 
-std::cout << "Values: " << order[0] << order[1] << order[2] << order[3];
-/*
-    ROS_INFO("In pvt_ident_6");//2
-for (int p = 0; p < 4; p++)
+std::cout << sum_dist_vec[0] << " "  << sum_dist_vec[1] << " "  << sum_dist_vec[2] << " "  << sum_dist_vec[3]; 
+	// We now have a 4x4 matrix populated by the distances to nearby points.
+	// We essentially want to select the lowest sum possible that still incorporates all distances.
+    // The code below calculates the various ways of shifting the rectangle
+for (int i = 0; i<NUMPTS; i++)
 {
-    int index2 = order[p];
-    std::cout << "In the for loop" << index2;
-    output_vector[p] = cv::Point2f(p,0);
-    std::cout << "output vector : " << output_vector << std::endl;
-    //output_vector[index2].x = pts_to_identify[p].x;
-   // output_vector[index2].y = pts_to_identify[p].y;
-     std::cout << pts_to_identify[p];
+    for (int j = 0; j<NUMPTS; j++)
+    {        //THIS IS WRONG
+        int k = within_bounds(j+i);
+        sum_dist_vec[i] += rtn_vec[j][k];
+        std::cout << "i = " << i << " j = " << j << "k = " << k << "sum_dist_vec" << sum_dist_vec[i] << std::endl;
+    }
+    if (sum_dist_vec[i] < sum_dist_vec[min_dist_ind])
+    {
+        min_dist_ind = i;
+        std::cout << std::endl << "found a new min : " << i << std::endl;
+    }
 }
 
-int a,b,c,d;
+std::vector<int> pts_to_identify(4);
+pts_to_identify[0] = 10;
+pts_to_identify[1] = 20;
+pts_to_identify[2] = 30;
+pts_to_identify[3] = 40;
+    std::cout << "pts_to_identify : " <<\
+                 pts_to_identify[0] << "   " <<\
+                 pts_to_identify[1] << "   " <<\
+                 pts_to_identify[2] << "   " <<\
+                 pts_to_identify[3] << "   " << std::endl;
 
-str_rtn >> a;
-str_rtn >> b;
-str_rtn >> c;
-str_rtn >> d;
+std::vector<int> output_vector(4);
 
-std::cout << std::endl << "New values: " << '\n' << a << b << c << d;
-*/
+
+for (int p = 0; p < NUMPTS; p++)
+{
+    //THIS IS ALSO PROBABLY WRONG;
+    int new_index = within_bounds(p+min_dist_ind);
+    output_vector[new_index] = pts_to_identify[p];
+    std::cout << "output vector : " << output_vector[new_index] << std::endl;
+}
+    std::cout << "output vector : " <<\
+                 output_vector[0] << "   " <<\
+                 output_vector[1] << "   " <<\
+                 output_vector[2] << "   " <<\
+                 output_vector[3] << "   " <<
+                 std::endl;
+
+
+
 
 
 
@@ -92,3 +83,17 @@ std::cout << std::endl << "New values: " << '\n' << a << b << c << d;
 
   return 0;
 }
+
+int within_bounds(int index)
+{
+
+// If the index is greater than numpoints, that means that we want to be wrapping around the matrix
+	if (index >= 4)
+	{
+		return (index-4);
+	}
+	else {return index;}
+}
+
+
+

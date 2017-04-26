@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-cap = cv2.VideoCapture('slow.flv')
+cap = cv2.VideoCapture('out.avi')
 
 # take first frame of the video
 ret,frame = cap.read()
