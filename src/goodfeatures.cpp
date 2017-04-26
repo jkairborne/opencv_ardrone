@@ -13,7 +13,7 @@ static const std::string OPENCV_WINDOW2 = "corrected"; //"Image window2";
 static const int NUMPTS = 4;
 
 // function declarations
-float distance_calc(cv::Point2f &, cv::Point2f &);
+float distance_calc(cv::Point2f, cv::Point2f);
 int within_bounds(int index);
 
 
@@ -31,8 +31,8 @@ class ImageConverter
 	bool useHarrisDetector;
 
     float mean_x, mean_y, counter_x, counter_y;
-    std::vector<cv::Point2f> corners, old_vector;
-	cv::Point2f MeanPt;
+    std::vector<cv::Point2f> corners, old_vector, output_vector;
+    cv::Point2f meanPt;
 	cv::Mat bw_image;
 	cv::Mat mask;
 	
@@ -42,7 +42,7 @@ class ImageConverter
 	// Function declarations
 	void imageCb(const sensor_msgs::ImageConstPtr& msg);
   //  int pvt_identify_pt(std::vector<cv::Point2f> pts_to_identify, std::vector<cv::Point2f> old_vec);
-    std::vector<cv::Point2f> pvt_identify_pt(std::vector<cv::Point2f> pts_to_identify, std::vector<cv::Point2f> old_vec);
+    void pvt_identify_pt();
 public:
 	ImageConverter()
 		: it_(nh_)
@@ -64,6 +64,7 @@ public:
 	//We want old vector to have size of number of points, plus one for the mean
 	old_vector.resize(NUMPTS+1);
     corners.resize(NUMPTS);
+    output_vector.resize(NUMPTS);
 	
 	cv::namedWindow(OPENCV_WINDOW);
 	cv::namedWindow(OPENCV_WINDOW2);
@@ -117,7 +118,6 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
 	hsv_image.copyTo(result_hsv, red_hue_mask);
 
-
 	// Here we transform the image to grayscale, as well as threshold it.
 	cv::cvtColor(result_hsv, bw_image, CV_BGR2GRAY); //cv::COLOR_BGR2GRAY also works
 	cv::threshold(bw_image,result_thrshld,130,255,0);
@@ -135,7 +135,7 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
 	// Use OpenCV's goodFeaturesToTrack algorithm to find just that - good corners to be tracked.
 	cv::goodFeaturesToTrack(result_dil, corners, maxCorners, qualityLevel, minDistance, mask, blockSize, useHarrisDetector, k );
-    corners.resize(4);
+    corners.resize(NUMPTS);
 
     //counters for calculating the mean of all four points.
     counter_x = 0;
@@ -143,9 +143,28 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
     for( size_t i = 0; i < corners.size(); i++ )
     {
+        counter_x+=corners[i].x;
+        counter_y+=corners[i].y;
+    } // end for
+
+    // Calculate the mean location of the points.
+    mean_x = counter_x/corners.size();
+    mean_y = counter_y/corners.size();
+    meanPt = cv::Point2f(mean_x,mean_y);
+
+    cv::circle(result_dil, meanPt,15,cv::Scalar(100.));
+
+    // Now, we need to identify which of the four corners is which:
+    // Have created the pvt_..._... function to handle this. Essentially, it will check which
+    // of the four squares is closest to which for the next iteration.
+    pvt_identify_pt();
+
+
+    for( size_t i = 0; i < corners.size(); i++ )
+    {
         // Add a circle around the detected corners
-        cv::circle(result_dil, corners[i], 10, cv::Scalar( 50. ), -1 );
-        cv::circle(cv_ptr->image, test2[i], 10, cv::Scalar( 50. ), -1 );
+        cv::circle(result_dil, corners[i], 5, cv::Scalar( 50. ), -1 );
+        cv::circle(cv_ptr->image, (old_vector[i]+old_vector[NUMPTS]), 5, cv::Scalar( 50. ), -1 );
         //cv::circle(result_dil, old_vector[i], 10, cv::Scalar( 50. ), -1 );
 
         // Create a string with just the number we would like to display.
@@ -156,34 +175,16 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
         //Add numbering to the four points discovered.
         cv::putText( result_dil, display_string, corners[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
-        cv::putText( cv_ptr->image, display_string, test2[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
-
-
-        //    ROS_INFO("Corner %lu is at: %f %f", i, corners[i].y,corners[i].x);
-        counter_x+=corners[i].x;
-        counter_y+=corners[i].y;
-    } // end for
-    // Calculate the mean location of the points.
-    mean_x = counter_x/corners.size();
-    mean_y = counter_y/corners.size();
-    MeanPt = cv::Point2f(mean_x,mean_y);
-    cv::circle(result_dil, MeanPt,15,cv::Scalar(100.));
-    //Now, we need to identify which of the four corners is which:
-	// Have created the pvt_..._... function to handle this. Essentially, it will check which of the four squares is closest to which for the next iteration.
-	// Essentially, we want to re-assign values of corners for the 
-
-std::vector<cv::Point2f> test2;
-test2.resize(4);
-
-test2 = pvt_identify_pt(corners,old_vector);
+        cv::putText( cv_ptr->image, display_string, (old_vector[i]+old_vector[NUMPTS]), CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
+    }
 
     //Now populate the old vector, for the next iteration
     for(std::vector<cv::Point2f>::size_type i = 0; i < corners.size(); i++)
 	{
 	// x and y for CV Mats are not the "x,y" we think of for images, but rather more like matrices - i.e. "y" first, then "x". This may be wrong.
-		  old_vector[i] = cv::Point2f(corners[i].y-mean_y,corners[i].x-mean_x);
+          old_vector[i] = corners[i] - meanPt;
 	} // end for
-	old_vector[NUMPTS+1] = MeanPt;
+    old_vector[NUMPTS] = meanPt;
 
 	// Update GUI Window
 	cv::imshow(OPENCV_WINDOW2, result_dil);
@@ -195,18 +196,18 @@ test2 = pvt_identify_pt(corners,old_vector);
 
 
 //int ImageConverter::pvt_identify_pt(std::vector<cv::Point2f> pts_to_identify, std::vector<cv::Point2f> old_vec)
-std::vector<cv::Point2f> ImageConverter::pvt_identify_pt(std::vector<cv::Point2f> pts_to_identify, std::vector<cv::Point2f> old_vec)
+void ImageConverter::pvt_identify_pt()
 {
     // This is a vector of vectors (aka a matrix), 4x4 in most cases, and it will house the distance from each point to the other.
     float rtn_vec[NUMPTS][NUMPTS];
 
-	for(int i=0; i<pts_to_identify.size();i++) 
+    for(int i=0; i<corners.size();i++)
 	{
 		//We use -1 from the old vector size because the mean is included in old vector
         for(int j = 0; j < NUMPTS; j++)
-			{
-			// Calculate distance from each old point (except the last one, which corresponds to the mean
-			rtn_vec[i][j] = distance_calc(old_vec[j],pts_to_identify[i]);
+            {
+            // Calculate distance from each old vector (and the mean)
+            rtn_vec[i][j] = distance_calc((old_vector[j]+meanPt),corners[i]);
 		}// end of internal nested for
 	} // end of external nested for
 
@@ -216,42 +217,52 @@ std::vector<cv::Point2f> ImageConverter::pvt_identify_pt(std::vector<cv::Point2f
 	// We now have a 4x4 matrix populated by the distances to nearby points.
 	// We essentially want to select the lowest sum possible that still incorporates all distances.
     // The code below calculates the various ways of shifting the rectangle
-for (int i = 0; i<NUMPTS; i++)
-{
-    for (int j = 0; j<NUMPTS; j++)
+    for (int i = 0; i<NUMPTS; i++)
     {
-        int k = within_bounds(j+i);
-        sum_dist_vec[i] += rtn_vec[j][k];
-    } // end inner for
-    if (sum_dist_vec[i] < sum_dist_vec[min_dist_ind])
+        //This for loop basically adds up values along the diagonals of our matrix
+        for (int j = 0; j<NUMPTS; j++)
+        {
+            int k = within_bounds(j+i);
+            sum_dist_vec[i] += rtn_vec[j][k];
+        } // end inner for
+        if (sum_dist_vec[i] < sum_dist_vec[min_dist_ind])
+        {
+            min_dist_ind = i;
+        } // end if
+    } // end outer for
+
+
+
+    // We now have an offset number. Now offset the
+    for (int p = 0; p < NUMPTS; p++)
     {
-        min_dist_ind = i;
-    } // end if
-} // end outer for
-
-
-std::vector<cv::Point2f> output_vector(4);
-
-
-for (int p = 0; p < NUMPTS; p++)
-{
-    int new_index = within_bounds(p+min_dist_ind);
-    output_vector[new_index] = pts_to_identify[p];
-}
-    std::cout << "output vector : " <<\
+        int new_index = within_bounds(p+min_dist_ind);
+        output_vector[new_index] = corners[p];
+    }
+    std::cout << "old corners : " <<\
+                 old_vector[0]+old_vector[4] << "   " <<\
+                 old_vector[1]+old_vector[4] << "   " <<\
+                 old_vector[2]+old_vector[4] << "   " <<\
+                 old_vector[3]+old_vector[4] << \
+                 std::endl;
+    std::cout << "input corners : " <<\
+                 corners[0] << "   " <<\
+                 corners[1] << "   " <<\
+                 corners[2] << "   " <<\
+                 corners[3] << "   " <<
+                 std::endl;
+    std::cout << "shift index: " << min_dist_ind;
+    std::cout << "output corners : " <<\
                  output_vector[0] << "   " <<\
                  output_vector[1] << "   " <<\
                  output_vector[2] << "   " <<\
                  output_vector[3] << "   " <<
-                 std::endl;
-
-    //return output_vector;
-return output_vector;
+                 std::endl << std::endl;
 } // end pvt_identify_pt
 
 
 
-float distance_calc(cv::Point2f &pt1, cv::Point2f &pt2)
+float distance_calc(cv::Point2f pt1, cv::Point2f pt2)
 {
 	float result;
 	
