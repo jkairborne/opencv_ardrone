@@ -1,10 +1,30 @@
 #include "opencv2/opencv.hpp" 
 #include <iostream>
+#include "hsvselector.h"
 
+using namespace cv;
+
+int main()
+{
+    /*
+    std::cout << "here is something";
+    Mat ex = Mat::ones(100,200,CV_8U);
+    cv::Scalar zeros = cv::Scalar(0,0,0);
+    Scalar hundy = Scalar(100,100,100);
+
+    HSVSelector asd = HSVSelector(ex, hundy, zeros, zeros, zeros);
+*/
+
+    HSVSelector asd = HSVSelector();
+    return 0;
+}
+
+
+/*
 using namespace cv;
 using namespace std;
 
-/*~~~~~~~~~~~~~~~~~~*/
+
 char ky;
 bool got_roi = false;
 Point points_array[4];
@@ -13,10 +33,7 @@ Rect2d ROI_Select;
 int width_roi = 0, height_roi = 0,min_x,min_y,max_x,max_y;
 Rect ROI_RECT ;
 vector< vector<Point> >  co_ordinates;
-/*~~~~~~~~~~~~~~~~~~*/
 
-
-/*~~~~~~~~~~~~~~~~~~*/
 //Callback for mousclick event, the x-y coordinate of mouse button-down 
 //are stored array of points [points_array].
 
@@ -97,19 +114,19 @@ static int count=0;
 	}
 
 }
-/*~~~~~~~~~~~~~~~~~~*/
+
 
 int main()
 {
 	// replace all "My_Win" with your window name
-	/*~~~~~~~~~~~~~~~~~~*/
+
 	namedWindow("My_Win", 1);
-	/*~~~~~~~~~~~~~~~~~~*/
+
 
 	VideoCapture input_video("out.avi");
 
 	// Set source imafe as [src]
-	/*~~~~~~~~~~~~~~~~~~*/
+
 	input_video >> src;
 	imshow("My_Win", src);
 	src.copyTo(backup);
@@ -117,18 +134,18 @@ int main()
 	waitKey(0);
 	Mat mask(src.rows, src.cols, CV_8UC1, cv::Scalar(0));
 	drawContours(mask, co_ordinates, 0, Scalar(255), CV_FILLED, 8);
-	/*~~~~~~~~~~~~~~~~~~*/
+
 	
 	while (1)
 	{
 		input_video >> src;
 		
-		/*~~~~~~~~~~~~~~~~~~*/	
+
 		//Need to copy Select ROI as MASK
 		src.copyTo(ROI_MASK, mask);
 		//Creat a rectangle around the Mask to reduce size of mask
 		ROI_Img = ROI_MASK(ROI_RECT);
-		/*~~~~~~~~~~~~~~~~~~*/
+
 
 		//Show Image
 		imshow("My_Win", ROI_Img);
@@ -139,7 +156,7 @@ int main()
 		
 	}
 }
-
+*/
 
 /*
 //One example that gets video from webcam and writes it to a video

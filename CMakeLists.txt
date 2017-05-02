@@ -107,7 +107,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES opencv_ardrone
 #  CATKIN_DEPENDS cv_bridge geometry_msgs image_transport opencv3 roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
@@ -119,10 +119,19 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
+include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
+
+
+
+set(HEADER_SOURCES
+    src/momentfinder.cpp
+    src/hsvselector.cpp
+)
+
+
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -137,7 +146,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(test1 src/test1.cpp)
+add_executable(test1 src/test1.cpp ${HEADER_SOURCES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -163,6 +172,15 @@ target_link_libraries(rec_video ${catkin_LIBRARIES})
 
 add_executable(camshift src/camshift.cpp)
 target_link_libraries(camshift ${catkin_LIBRARIES})
+
+add_executable(multicolor src/multicolor.cpp)
+target_link_libraries(multicolor ${catkin_LIBRARIES})
+
+#add_executable(momentfinder src/momentfinder.cpp)
+#target_link_libraries(momentfinder ${catkin_LIBRARIES})
+
+#add_executable(hsvselector src/hsvselector.cpp)
+#target_link_libraries(hsvselector ${catkin_LIBRARIES})
 #add_executable(make_video src/make_video.cpp)
 #target_link_libraries(make_video ${catkin_LIBRARIES})
 #############
