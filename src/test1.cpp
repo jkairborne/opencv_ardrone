@@ -15,7 +15,8 @@ int main()
     HSVSelector asd = HSVSelector(ex, hundy, zeros, zeros, zeros);
 */
 
-    HSVSelector asd = HSVSelector();
+    HSVSelector asd = HSVSelector(1);
+
     return 0;
 }
 

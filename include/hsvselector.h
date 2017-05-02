@@ -10,7 +10,7 @@ class HSVSelector //: public MomentFinder
  //   cv::Scalar lowerBd, upperBd, lowerBd2, upperBd2;
 public:
    // HSVSelector(cv::Mat& image, cv::Scalar lwBd, cv::Scalar upBd, cv::Scalar lwBd2 = cv::Scalar(0,0,0), cv::Scalar upBd2 = cv::Scalar(0,0,0));
-    HSVSelector();
+    HSVSelector(int n);
 };
 
 #endif // HSVSELECTOR_H

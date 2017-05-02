@@ -4,9 +4,9 @@
 //#include <opencv2/highgui/highgui.hpp>
 
 
-HSVSelector()
+HSVSelector::HSVSelector(int n)
 {
-    std::cout << "You are in the selector";
+    std::cout << "You are in the selector " << n << '\n';
 }
 
 /*
