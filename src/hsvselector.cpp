@@ -5,24 +5,25 @@
 #include <opencv2/highgui/highgui.hpp>
 
 
+//Default constructor
 HSVSelector::HSVSelector()
 {
     std::cout << "You are in the HSVSelector constructor but with no matrix called. You may want to add an image" << '\n';
 }
 
 
-HSVSelector::HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw, cv::Scalar lwBd2, cv::Scalar upBd2, bool dispLns)
+HSVSelector::HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw, cv::Scalar lwBd2, cv::Scalar upBd2, bool dispLns, bool tempLns)
 {
-    //I think this firstUse is now useless;
-    firstUse = true;
-
     lowerBd = lwBd;
     upperBd = upBd;
     lowerBd2 = lwBd2;
     upperBd2 = upBd2;
     erosion_size = 5;
+    // Determines if the output is shown in a window
     dispWindow = dispWndw;
+    // Determines if a MomentFeature will be created, and if so whether lines will be temporary.
     dispLines = dispLns;
+    tempLines = tempLns;
 
     if(dispWindow)
     {
@@ -30,7 +31,7 @@ HSVSelector::HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw, cv::Sc
     }
     if(dispLines)
     {
-        MmFdr = MomentFinder();
+        MmFdr = MomentFinder(dispLines, tempLines);
     }
 
     element = getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * erosion_size + 1, 2 * erosion_size + 1),cv::Point(erosion_size, erosion_size) );
@@ -64,13 +65,20 @@ cv::Mat HSVSelector::newImage(cv::Mat &image)
     erode(imgThresholded, imgThresholded, element );
     dilate( imgThresholded, imgThresholded, element );
 
+    // In the case we would like the lines displayed - this will update our image,
+    // it will then display if requested, and finally return the image with lines.
+    if(dispLines)
+    {
+        cv::Mat withLines = MmFdr.updateImg(imgThresholded);
+        if(dispWindow) {cv::imshow("HSVSelectorWindow",withLines);}
+        return withLines;
+    }
+
     if(dispWindow)
     {
         cv::imshow("HSVSelectorWindow",imgThresholded);
     }
-    cv::Mat withLines = MmFdr.updateImg(imgThresholded);
-    cv::namedWindow("withLines");
-    cv::imshow("withLines",withLines);
+
     return imgThresholded;
 }
 

@@ -35,10 +35,11 @@ public:
     ImageConverter()
         : it_(nh_)
     {
-      // mask = cv::Mat::zeros(640,480,CV_8UC3);
     image_sub_ = it_.subscribe("/ardrone/image_raw", 1,&ImageConverter::imageCb, this);
-    //yellow = HSVSelector(mask, RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
-    yellow = HSVSelector(RED_LOWER,RED_UPPER,true,ORANGE_LOWER,ORANGE_UPPER);
+    //    HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw = true, cv::Scalar lwBd2 = SCALAR_ZERO,
+    //                cv::Scalar upBd2 = SCALAR_ZERO, bool dispLns = true, bool tempLns = true);
+
+    yellow = HSVSelector(RED_LOWER,RED_UPPER,true,ORANGE_LOWER,ORANGE_UPPER,true,false);
     cv::namedWindow(OPENCV_WINDOW);
 
     }
