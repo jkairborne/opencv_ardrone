@@ -27,16 +27,16 @@ static const cv::Scalar VIOLET_UPPER = cv::Scalar(160, 255, 255);
 
 class HSVSelector //: public MomentFinder
 {
-    cv::Mat img, simg, element;
+    cv::Mat hsvImg, img, resultImg, element;
     cv::Scalar lowerBd, upperBd, lowerBd2, upperBd2;
     int erosion_size;
-    bool dispWindow;
+    bool dispWindow, firstUse;
 
     //Function declarations
 
     cv::Mat hsvSelect();
 public:
-    HSVSelector(cv::Mat& image, cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw = true, cv::Scalar lwBd2 = SCALAR_ZERO, cv::Scalar upBd2 = SCALAR_ZERO);
+    HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw = true, cv::Scalar lwBd2 = SCALAR_ZERO, cv::Scalar upBd2 = SCALAR_ZERO);
     HSVSelector();
     cv::Mat newImage(cv::Mat &image);
     void modifyBounds1(cv::Scalar nwLwBd, cv::Scalar nwUpBd);

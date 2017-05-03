@@ -39,8 +39,8 @@ public:
     {
       // mask = cv::Mat::zeros(640,480,CV_8UC3);
     image_sub_ = it_.subscribe("/ardrone/image_raw", 1,&ImageConverter::imageCb, this);
-    yellow = HSVSelector(mask, RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
-
+    //yellow = HSVSelector(mask, RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
+    yellow = HSVSelector(RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
     cv::namedWindow(OPENCV_WINDOW);
 
     }
@@ -79,14 +79,9 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
         imgLines = Mat::zeros( cv_ptr->image.size(), CV_8UC3 );
         firstTime = false;
     }
-    yellow = HSVSelector(cv_ptr->image, RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
-    yellow.newImage(cv_ptr->image);
-    //updated = yellow.newImage(cv_ptr->image);
 
-    std::cout << " encoding : " << cv_ptr->encoding <<" channels : " <<  cv_ptr->image.channels() <<" dims : " <<  cv_ptr->image.dims << " cols : " << cv_ptr->image.cols;
-
- //   cv::imshow(OPENCV_WINDOW, updated);
-
+    cv::Mat result = yellow.newImage(cv_ptr->image);
+        cv::imshow("Image1",result);
     cv::waitKey(3);
 
 

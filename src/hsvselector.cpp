@@ -10,10 +10,14 @@ HSVSelector::HSVSelector()
 }
 
 
-HSVSelector::HSVSelector(cv::Mat& image, cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw, cv::Scalar lwBd2, cv::Scalar upBd2)
+HSVSelector::HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw, cv::Scalar lwBd2, cv::Scalar upBd2)
 {
+    if(dispWndw)
+    {
+        cv::namedWindow("HSVSelectorWindow");
+    }
+    firstUse = true;
 
-    img = image;
     lowerBd = lwBd;
     upperBd = upBd;
     lowerBd2 = lwBd2;
@@ -22,59 +26,43 @@ HSVSelector::HSVSelector(cv::Mat& image, cv::Scalar lwBd, cv::Scalar upBd, bool 
     dispWindow = dispWndw;
 
     element = getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * erosion_size + 1, 2 * erosion_size + 1),cv::Point(erosion_size, erosion_size) );
-
-    cv::Mat hsv_image, result_red, result_yellow;
-    cv::cvtColor(image, hsv_image, CV_BGR2HSV);
-
-    if(dispWndw)
-    {
-        cv::namedWindow("Window1");
-
-    }
-    std::cout << lwBd << " " << upBd << " " << lwBd2 << " " << upBd2 << '\n';
-    std::cout << BLUE_LOWER;
 }
 
 
 cv::Mat HSVSelector::newImage(cv::Mat &image)
 {
-    //So the line isn't drawn on the first image:
+    img = image;
 
-
+    // Convert the image to hsv;
+    cv::cvtColor(image, hsvImg, CV_BGR2HSV);
 
     // Threshold the image for the first time. If a second is required, the next code will take care of it.
-    cv::Mat first_range, imgThresholded;
-
-    cv::inRange(image, lowerBd, upperBd, first_range);
+    cv::Mat imgThresholded;
+    cv::inRange(hsvImg, lowerBd, upperBd, imgThresholded);
 
     // If a second threshold is desired (to add a separate part of the spectrum), this code will handle that
     if (lowerBd2!=SCALAR_ZERO && upperBd2!=SCALAR_ZERO)
     {
-        cv::Mat second_range;
-        cv::inRange(img,lowerBd2,upperBd2, second_range);
+        cv::Mat first_range, second_range;
+        first_range = imgThresholded;
+        cv::inRange(hsvImg,lowerBd2,upperBd2, second_range);
+        imgThresholded.setTo(0);
 
-        cv::Mat first_range_copy = first_range;
-
-        cv::addWeighted(first_range_copy, 1.0, second_range, 1.0, 0.0, first_range);
+        cv::addWeighted(first_range, 1.0, second_range, 1.0, 0.0, imgThresholded);
     }
 
-    // Here we transform the image to grayscale, as well as threshold it.
-    imgThresholded = first_range;
 
     //morphological opening (removes small objects from the foreground)
     erode(imgThresholded, imgThresholded, element );
     dilate( imgThresholded, imgThresholded, element );
 
-    //morphological closing (removes small holes from the foreground)
-    dilate( imgThresholded, imgThresholded, element );
-    erode(imgThresholded, imgThresholded, element );
-
-
+cv::imshow("Window1",imgThresholded);
+/*
     if(dispWindow)
     {
         cv::imshow("Window 1",imgThresholded);
     }
-/*
+
     //Calculate the moments of the thresholded image
     Moments oMoments = moments(imgThresholded);
 
