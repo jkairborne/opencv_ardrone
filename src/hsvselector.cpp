@@ -1,4 +1,5 @@
 #include "hsvselector.h"
+#include "momentfinder.h"
 #include <iostream>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -10,12 +11,9 @@ HSVSelector::HSVSelector()
 }
 
 
-HSVSelector::HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw, cv::Scalar lwBd2, cv::Scalar upBd2)
+HSVSelector::HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw, cv::Scalar lwBd2, cv::Scalar upBd2, bool dispLns)
 {
-    if(dispWndw)
-    {
-        cv::namedWindow("HSVSelectorWindow");
-    }
+    //I think this firstUse is now useless;
     firstUse = true;
 
     lowerBd = lwBd;
@@ -24,6 +22,16 @@ HSVSelector::HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw, cv::Sc
     upperBd2 = upBd2;
     erosion_size = 5;
     dispWindow = dispWndw;
+    dispLines = dispLns;
+
+    if(dispWindow)
+    {
+        cv::namedWindow("HSVSelectorWindow");
+    }
+    if(dispLines)
+    {
+        MmFdr = MomentFinder();
+    }
 
     element = getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * erosion_size + 1, 2 * erosion_size + 1),cv::Point(erosion_size, erosion_size) );
 }
@@ -56,44 +64,13 @@ cv::Mat HSVSelector::newImage(cv::Mat &image)
     erode(imgThresholded, imgThresholded, element );
     dilate( imgThresholded, imgThresholded, element );
 
-cv::imshow("Window1",imgThresholded);
-/*
     if(dispWindow)
     {
-        cv::imshow("Window 1",imgThresholded);
+        cv::imshow("HSVSelectorWindow",imgThresholded);
     }
-
-    //Calculate the moments of the thresholded image
-    Moments oMoments = moments(imgThresholded);
-
-    dM01 = oMoments.m01;
-    dM10 = oMoments.m10;
-    dArea = oMoments.m00;
-
-    // if the area <= 10000, I consider that the there are no object in the image and it's because of the noise, the area is not zero
-    if (dArea > 10)
-    {
-        ROS_INFO("In the darea callback");
-     //calculate the position of the ball
-     int posX = dM10 / dArea;
-     int posY = dM01 / dArea;
-
-     if (iLastX >= 0 && iLastY >= 0 && posX >= 0 && posY >= 0)
-     {
-                 ROS_INFO("In the darea callback2");
-      //Draw a red line from the previous point to the current point
-      cv::line(imgLines, Point(posX, posY), Point(iLastX, iLastY), Scalar(0,0,255), 2);
-      ROS_INFO("Drawing new line: %d %d %d %d" ,posX ,posY ,iLastX ,iLastY);
-     }
-
-     iLastX = posX;
-     iLastY = posY;
-    }
-
-    img = img + imgLines;
-        cv::imshow(OPENCV_WINDOW3, imgLines);
-    ROS_INFO("About to return imglines");
- */
+    cv::Mat withLines = MmFdr.updateImg(imgThresholded);
+    cv::namedWindow("withLines");
+    cv::imshow("withLines",withLines);
     return imgThresholded;
 }
 

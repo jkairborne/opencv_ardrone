@@ -3,6 +3,7 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "momentfinder.h"
 
 static const cv::Scalar SCALAR_ZERO = cv::Scalar(0,0,0);
 
@@ -30,16 +31,16 @@ class HSVSelector //: public MomentFinder
     cv::Mat hsvImg, img, resultImg, element;
     cv::Scalar lowerBd, upperBd, lowerBd2, upperBd2;
     int erosion_size;
-    bool dispWindow, firstUse;
-
-    //Function declarations
-
-    cv::Mat hsvSelect();
+    bool dispWindow, firstUse, dispLines;
+    MomentFinder MmFdr;
 public:
-    HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw = true, cv::Scalar lwBd2 = SCALAR_ZERO, cv::Scalar upBd2 = SCALAR_ZERO);
+    // Constructors
+    HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw = true, cv::Scalar lwBd2 = SCALAR_ZERO, cv::Scalar upBd2 = SCALAR_ZERO, bool dispLns = true);
     HSVSelector();
+    //Function declarations
     cv::Mat newImage(cv::Mat &image);
     void modifyBounds1(cv::Scalar nwLwBd, cv::Scalar nwUpBd);
+    void calculateMoments();
     void modifyBounds2(cv::Scalar nwLwBd, cv::Scalar nwUpBd);
 };
 

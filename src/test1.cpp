@@ -25,8 +25,6 @@ class ImageConverter
 
     HSVSelector yellow;
     Mat mask, element, imgLines;
-
-    double dM01, dM10, dArea;
     bool firstTime;
 
 
@@ -40,7 +38,7 @@ public:
       // mask = cv::Mat::zeros(640,480,CV_8UC3);
     image_sub_ = it_.subscribe("/ardrone/image_raw", 1,&ImageConverter::imageCb, this);
     //yellow = HSVSelector(mask, RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
-    yellow = HSVSelector(RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
+    yellow = HSVSelector(RED_LOWER,RED_UPPER,true,ORANGE_LOWER,ORANGE_UPPER);
     cv::namedWindow(OPENCV_WINDOW);
 
     }

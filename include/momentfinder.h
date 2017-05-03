@@ -10,16 +10,21 @@
 
 class MomentFinder
 {
-    cv::Mat img, imgLines;
-    int numTempLines;
-    bool linesOn, linesTemp;
+    cv::Mat img, linesImg;
+    int numTempLines, iLastX, iLastY, posX, posY;
+    double dM01, dM10, dArea;
+    bool linesOn, linesTemp, firstImg;
 
     //Function declarations:
-    void updateImg(cv::Mat& updImg);
+    void drawLine();
+    void calculateMoments();
 public:
-    MomentFinder(cv::Mat&, bool modifyimage = true, bool tempmodify = false);
+    MomentFinder(bool modifyimage = true, bool tempmodify = false, int nLines = 20);
+    //Function declarations:
+    cv::Mat updateImg(cv::Mat& updImg);
     void setNumTempLines(int newNum);
     int getNumTempLines();
+    cv::Mat getImgLines();
 
 };
 
