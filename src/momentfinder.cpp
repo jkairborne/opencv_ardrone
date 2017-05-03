@@ -101,6 +101,16 @@ void MomentFinder::drawLine()
 
 } // end drawLine
 
+cv::Point MomentFinder::getCentre()
+{
+    int centreX = dM10 / dArea;
+    int centreY = dM01 / dArea;
+    cv::Point centre = cv::Point(centreX,centreY);
+
+    return centre;
+}
+
+
 void MomentFinder::setNumTempLines(int newNum)
 {
     numTempLines = newNum;

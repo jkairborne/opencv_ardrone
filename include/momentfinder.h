@@ -29,9 +29,9 @@ public:
     //Function declarations:
     // Function to be called to update an image. This function will then call the calculateMoments and drawLine functions.
     cv::Mat updateImg(cv::Mat& updImg);
+    cv::Point getCentre();
     //Function to modify the number of temporary lines to be kept.
     void setNumTempLines(int newNum);
-
 };
 
 #endif // MOMENTFINDER_H
