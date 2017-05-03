@@ -1,3 +1,113 @@
+#include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <vector>
+
+#include <algorithm>
+#include <iostream>
+
+#include "hsvselector.h"
+
+static const std::string OPENCV_WINDOW = "Image1";
+
+
+using std::vector;
+using namespace cv;
+
+class ImageConverter
+{
+    ros::NodeHandle nh_;
+    image_transport::ImageTransport it_;
+    image_transport::Subscriber image_sub_;
+
+    HSVSelector yellow;
+    Mat mask, element, imgLines;
+
+    double dM01, dM10, dArea;
+    bool firstTime;
+
+
+    // Function declarations
+    void imageCb(const sensor_msgs::ImageConstPtr& msg);
+
+public:
+    ImageConverter()
+        : it_(nh_)
+    {
+      // mask = cv::Mat::zeros(640,480,CV_8UC3);
+    image_sub_ = it_.subscribe("/ardrone/image_raw", 1,&ImageConverter::imageCb, this);
+    yellow = HSVSelector(mask, RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
+
+    cv::namedWindow(OPENCV_WINDOW);
+
+    }
+
+    ~ImageConverter()
+    {
+        cv::destroyWindow(OPENCV_WINDOW);
+    }
+}; // End class
+
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "image_converter");
+
+    ImageConverter ic;
+
+    ros::spin();
+    return 0;
+}
+
+void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
+{
+    cv_bridge::CvImagePtr cv_ptr;
+    try
+    {
+        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+        return;
+    }
+
+    if(firstTime)
+    {
+        imgLines = Mat::zeros( cv_ptr->image.size(), CV_8UC3 );
+        firstTime = false;
+    }
+    yellow = HSVSelector(cv_ptr->image, RED_LOWER,RED_UPPER,false,ORANGE_LOWER,ORANGE_UPPER);
+    yellow.newImage(cv_ptr->image);
+    //updated = yellow.newImage(cv_ptr->image);
+
+    std::cout << " encoding : " << cv_ptr->encoding <<" channels : " <<  cv_ptr->image.channels() <<" dims : " <<  cv_ptr->image.dims << " cols : " << cv_ptr->image.cols;
+
+ //   cv::imshow(OPENCV_WINDOW, updated);
+
+    cv::waitKey(3);
+
+
+}// end ImageConverter::imageCb
+
+
+/*
+HSV color space is also consists of 3 matrices, HUE, SATURATION and VALUE. In OpenCV, value range for  HUE, SATURATION  and VALUE  are respectively 0-179, 0-255 and 0-255. HUE represents the color, SATURATION  represents the amount to which that respective color is mixed with white and VALUE  represents the  amount to which that respective color is mixed with black.
+
+In the above application, I have considered that the red object has HUE, SATURATION and VALUE in between 170-180, 160-255, 60-255 respectively. Here the HUE is unique for that specific color distribution of that object. But SATURATION and VALUE may be vary according to the lighting condition of that environment.
+
+Hue values of basic colors
+
+
+These are approximate values. You have to find the exact range of HUE values according to the color of the object. I found that the range of 170-179 is perfect for the range of hue values of my object. The SATURATION and VALUE is depend on the lighting condition of the environment as well as the surface of the object.
+
+How to find the exact range of HUE, SATURATION and VALUE for a object is discussed later in this post.
+*/
+
+
+/*
 #include "opencv2/opencv.hpp" 
 #include <iostream>
 #include "hsvselector.h"
@@ -6,19 +116,20 @@ using namespace cv;
 
 int main()
 {
-    /*
+
     std::cout << "here is something";
     Mat ex = Mat::ones(100,200,CV_8U);
     cv::Scalar zeros = cv::Scalar(0,0,0);
     Scalar hundy = Scalar(100,100,100);
 
-    HSVSelector asd = HSVSelector(ex, hundy, zeros, zeros, zeros);
-*/
+    HSVSelector asd = HSVSelector(ex, hundy, zeros,true , zeros, zeros);
 
-    HSVSelector asd = HSVSelector(1);
+    std::cout << std::endl;
+
+    HSVSelector asd2 = HSVSelector();
 
     return 0;
-}
+}*/
 
 
 /*

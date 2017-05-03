@@ -79,7 +79,7 @@ public:
 	{
 		cv::destroyWindow(OPENCV_WINDOW);
 		cv::destroyWindow(OPENCV_WINDOW2);
-        cv::namedWindow(OPENCV_WINDOW3);
+        cv::destroyWindow(OPENCV_WINDOW3);
     }
 }; // End class
 
