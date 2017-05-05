@@ -39,7 +39,7 @@ public:
     //    HSVSelector(cv::Scalar lwBd, cv::Scalar upBd, bool dispWndw = true, cv::Scalar lwBd2 = SCALAR_ZERO,
     //                cv::Scalar upBd2 = SCALAR_ZERO, bool dispLns = true, bool tempLns = true);
 
-    yellow = HSVSelector(RED_LOWER,RED_UPPER,true,ORANGE_LOWER,ORANGE_UPPER,true,false);
+    yellow = HSVSelector(RED_LOWER,RED_UPPER,true,ORANGE_LOWER,ORANGE_UPPER);
     cv::namedWindow(OPENCV_WINDOW);
 
     }
@@ -80,7 +80,8 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
     }
 
     cv::Mat result = yellow.newImage(cv_ptr->image);
-        cv::imshow("Image1",result);
+    //cv::imshow("Image1",result);
+    cv::imshow("Image1",cv_ptr->image);
     cv::waitKey(3);
 
 

@@ -76,7 +76,7 @@ cv::Mat HSVSelector::newImage(cv::Mat &image)
 
     if(dispWindow)
     {
-        cv::imshow("HSVSelectorWindow",imgThresholded);
+        cv::imshow("HSVSelectorWindow",image);
     }
 
     return imgThresholded;
@@ -87,7 +87,6 @@ void HSVSelector::modifyBounds1(cv::Scalar nwLwBd, cv::Scalar nwUpBd)
     upperBd = nwUpBd;
     lowerBd = nwLwBd;
 }
-
 
 void HSVSelector::modifyBounds2(cv::Scalar nwLwBd, cv::Scalar nwUpBd)
 {

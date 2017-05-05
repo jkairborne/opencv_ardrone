@@ -14,7 +14,7 @@
 // Define all the constants we will need, including typical values for various colors.
 static const cv::Scalar SCALAR_ZERO = cv::Scalar(0,0,0);
 
-static const cv::Scalar ORANGE_LOWER = cv::Scalar(0, 100, 100);
+static const cv::Scalar ORANGE_LOWER = cv::Scalar(0, 50, 50);
 static const cv::Scalar ORANGE_UPPER = cv::Scalar(10, 255, 255);
 
 static const cv::Scalar RED_LOWER = cv::Scalar(170, 100, 100);
