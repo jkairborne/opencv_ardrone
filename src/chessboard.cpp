@@ -8,6 +8,10 @@
 #include <iostream>
 #include <ctype.h>
 
+#include "ibvs.h"
+#include "ctime"
+
+
 static const int CBOARD_COL = 5;
 static const int CBOARD_ROW = 4;
 
@@ -23,7 +27,8 @@ int main(int argc, char**argv)
             cout << "Usage: chessboard imageToLoad" << endl;
             return -1;
     }
-
+std::clock_t start;
+start = std::clock();
 
     Mat image;
     image = imread(argv[1],CV_LOAD_IMAGE_COLOR);
@@ -58,9 +63,22 @@ int main(int argc, char**argv)
         circle(image, fourCorners[i], 1, cv::Scalar( 50. ), -1 );
     }
     cout << corners << endl;
+/*
     namedWindow("Image2");
     imshow("Image2",image);
     waitKey(0);
+*/
+    //IBVS PORTION
+    IBVS ibvs = IBVS();
+    ibvs.update_uv(fourCorners);
+    ibvs.disp_uv();
+    ibvs.update_Le(1);
+    ibvs.display_Le();
+    ibvs.MP_psinv_Le();
+
+
+    std::cout << '\n' << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+
 
     return 0;
 	
