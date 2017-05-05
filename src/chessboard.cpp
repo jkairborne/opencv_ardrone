@@ -48,15 +48,11 @@ int main(int argc, char**argv)
         cornerSubPix(gray,corners,Size(11,11),Size(-1,-1),TermCriteria(CV_TERMCRIT_EPS+ CV_TERMCRIT_ITER,30,0.1));
     }
     // 0 4 15 19...
-/*    fourCorners.push_back(corners[0]);
+    fourCorners.push_back(corners[0]);
     fourCorners.push_back(corners[CBOARD_ROW]);
     fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
     fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
-*/
-    fourCorners.push_back(corners[0]);
-    fourCorners.push_back(corners[CBOARD_COL-1]);
-    fourCorners.push_back(corners[CBOARD_COL*(CBOARD_ROW-1)-1]);
-    fourCorners.push_back(corners[CBOARD_ROW*CBOARD_COL-1]);
+
     for(int i = 0; i<4; i++)
     {
         circle(image, fourCorners[i], 1, cv::Scalar( 50. ), -1 );

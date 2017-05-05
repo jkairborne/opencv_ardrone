@@ -1,0 +1,142 @@
+#ifndef IBVS_H
+#define IBVS_H
+
+#include <iostream>
+#include <Eigen/Eigen>
+
+typedef Eigen::Matrix<float, 8, 6> LeMat;
+typedef Eigen::Matrix<float, 6, 8> LePlus;
+typedef Eigen::Matrix<float, 8, 1> uv;
+
+
+class IBVS {
+    uv ImagePts;
+    LeMat Le;
+    LePlus Le_psinv, DiagMat;
+    double old_z_hat;
+    double Pinv_tolerance;
+  public:
+    void update_values (int update_pair, double new_u, double new_v);
+    IBVS();
+    void disp_vals(int n);
+    void update_Le_row(int, double);
+    void update_Le(double);
+    void display_Le();
+    void MP_psinv_Le();
+};
+
+void IBVS::MP_psinv_Le()
+{
+   Eigen::JacobiSVD<Eigen::MatrixXf> svd(Le, Eigen::ComputeFullU | Eigen::ComputeFullV);
+   std::cout << "Sing Values: " << svd.singularValues() << std::endl;
+   std::cout << "U: " << svd.matrixU() << std::endl;
+   std::cout << "VT: " << svd.matrixV() << std::endl;
+
+int i = 0;
+for(i=0;i<6;i++)
+{
+// Here we have an If clause, simply on the chance that the 
+
+if(svd.singularValues()[i] > Pinv_tolerance || svd.singularValues()[i]<(-Pinv_tolerance))
+{DiagMat(i,i) = (1/svd.singularValues()[i]);}//endif
+else{ DiagMat(i,i) = 0;}//end else
+
+}//end for
+
+//chose not to use the diagonal matrix because it has issues with being displayed, and can't handle a rectangular matrix
+//   Eigen::DiagonalMatrix<float, 6> SingValMat(6);
+//   SingValMat.diagonal() = svd.singularValues();
+std::cout << "\n" << DiagMat << "\n";   
+
+   Eigen::MatrixXf V, UT;
+   V = svd.matrixV().transpose();
+   UT = svd.matrixU().transpose();
+std::cout << "\nV: " << V << "\n \n UT: " << UT;
+std::cout << "\n\n" << DiagMat << "\n";
+
+   Le_psinv = V*DiagMat*UT;
+
+   std::cout << Le_psinv;
+
+}
+
+void IBVS::display_Le()
+{
+	std::cout << Le;
+}
+
+
+// n should be a number between 1 and 4, depending on the "blob" we want to keep track of.
+void IBVS::update_Le_row(int n, double z_hat)
+{
+   int row_number1, row_number2;
+   row_number1 = 2*(n-1);
+   row_number2 = 2*n -1;
+   Le(row_number1,0) = -1/z_hat;
+   Le(row_number1,2) = ImagePts(row_number1,0) / z_hat;
+   Le(row_number1,3) = ImagePts(row_number1,0) * ImagePts(row_number2,0);
+   Le(row_number1,4) = - (1 + ImagePts(row_number1,0)*ImagePts(row_number1,0));
+   Le(row_number1,5) = ImagePts(row_number2,0);
+//Populate second row of that particular pair 
+   Le(row_number2,1) = -1/z_hat;
+   Le(row_number2,2) = ImagePts(row_number2,0) / z_hat;
+   Le(row_number2,3) = 1 + ImagePts(row_number1,0)*ImagePts(row_number1,0);
+   Le(row_number2,4) = -ImagePts(row_number1,0) * ImagePts(row_number2,0);
+   Le(row_number2,5) = -ImagePts(row_number1,0);
+}
+
+void IBVS::update_Le(double z_hat)
+{
+	IBVS::update_Le_row(1,z_hat);
+	IBVS::update_Le_row(2,z_hat);
+	IBVS::update_Le_row(3,z_hat);
+	IBVS::update_Le_row(4,z_hat);
+}
+
+void IBVS::update_values (int update_pair, double new_u, double new_v)
+{
+ImagePts(update_pair*2+1,0) = new_u;
+ImagePts(update_pair*2+2,0) = new_v;
+}
+
+IBVS::IBVS()
+{
+	ImagePts(0,0) = 7;
+	ImagePts(1,0) = 8;
+	ImagePts(2,0) = 3;
+	ImagePts(3,0) = 4;
+	ImagePts(4,0) = 5;
+	ImagePts(5,0) = 6;
+	ImagePts(6,0) = 1;
+	ImagePts(7,0) = 2;
+	Le <<	0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0;
+	DiagMat <<	0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0;
+	Le_psinv <<	0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0,
+			0,0,0,0,0,0;
+
+}
+
+void IBVS::disp_vals(int n) 
+{
+std::cout << "\n Pair " << (n+1) << ": " <<"u = " << ImagePts(2*n,0) << ", v = " << ImagePts(2*n+1,0)<< '\n';;
+}
+
+#endif // IBVS_H
