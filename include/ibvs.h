@@ -20,6 +20,7 @@ class IBVS {
     void update_uv_row (int update_pair, double new_u, double new_v);
     void update_uv (std::vector<cv::Point2f> uv_new);
     void update_uv (std::vector<double> uv_new); //Overload for vector of doubles
+    void update_tolerance(double newval);
     IBVS();
     void disp_uv_row(int n);
     void disp_uv();
@@ -32,9 +33,9 @@ class IBVS {
 void IBVS::MP_psinv_Le()
 {
     Eigen::JacobiSVD<Eigen::MatrixXf> svd(Le, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    std::cout << "Sing Values: " << svd.singularValues() << std::endl;
-    std::cout << "U: " << svd.matrixU() << std::endl;
-    std::cout << "VT: " << svd.matrixV() << std::endl;
+//    std::cout << "Sing Values: " << svd.singularValues() << std::endl;
+//    std::cout << "U: " << svd.matrixU() << std::endl;
+//    std::cout << "VT: " << svd.matrixV() << std::endl;
 
     int i = 0;
     for(i=0;i<6;i++)
@@ -53,17 +54,17 @@ void IBVS::MP_psinv_Le()
     //chose not to use the diagonal matrix because it has issues with being displayed, and can't handle a rectangular matrix
     //   Eigen::DiagonalMatrix<float, 6> SingValMat(6);
     //   SingValMat.diagonal() = svd.singularValues();
-    std::cout << "\n" << DiagMat << "\n";
+//    std::cout << "\n" << DiagMat << "\n";
 
     Eigen::MatrixXf V, UT;
-    V = svd.matrixV().transpose();
+    V = svd.matrixV();
     UT = svd.matrixU().transpose();
-    std::cout << "\nV: " << V << "\n \n UT: " << UT;
-    std::cout << "\n\n" << DiagMat << "\n\n";
+//    std::cout << "\nV: " << V << "\n \n UT: " << UT;
+//    std::cout << "\n\n" << DiagMat << "\n\n";
 
     Le_psinv = V*DiagMat*UT;
 
-    std::cout << "Le_Psinv: \n" <<Le_psinv;
+    std::cout << "Le_Psinv: \n" <<Le_psinv << '\n';
 
 }
 
@@ -135,14 +136,16 @@ ImagePts(update_pair*2+1,0) = new_v;
 
 IBVS::IBVS()
 {
-	ImagePts(0,0) = 7;
-	ImagePts(1,0) = 8;
+    Pinv_tolerance = 0.1;
+
+        ImagePts(0,0) = 1;
+        ImagePts(1,0) = 2;
 	ImagePts(2,0) = 3;
 	ImagePts(3,0) = 4;
 	ImagePts(4,0) = 5;
 	ImagePts(5,0) = 6;
-	ImagePts(6,0) = 1;
-	ImagePts(7,0) = 2;
+        ImagePts(6,0) = 7;
+        ImagePts(7,0) = 8;
 	Le <<	0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
@@ -166,6 +169,11 @@ IBVS::IBVS()
 			0,0,0,0,0,0,
 			0,0,0,0,0,0;
 
+}
+
+void IBVS::update_tolerance(double newval)
+{
+    Pinv_tolerance = newval;
 }
 
 void IBVS::disp_uv_row(int n)

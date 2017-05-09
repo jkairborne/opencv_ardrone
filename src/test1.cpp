@@ -1,3 +1,26 @@
+#include "ibvs.h"
+#include <iostream>
+
+int main()
+{
+    IBVS def;
+    def.update_Le(1.0);
+    def.display_Le();
+    def.MP_psinv_Le();
+
+    std::cout << '\n' << '\n' << "Now change the pinv tolerance to 0.01: \n";
+    def.update_tolerance(0.01);
+    def.MP_psinv_Le();
+
+
+    return 0;
+}
+
+
+
+/*
+ *
+ *
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -86,7 +109,7 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
 
 }// end ImageConverter::imageCb
-
+*/
 
 /*
 HSV color space is also consists of 3 matrices, HUE, SATURATION and VALUE. In OpenCV, value range for  HUE, SATURATION  and VALUE  are respectively 0-179, 0-255 and 0-255. HUE represents the color, SATURATION  represents the amount to which that respective color is mixed with white and VALUE  represents the  amount to which that respective color is mixed with black.
