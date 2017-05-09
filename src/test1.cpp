@@ -1,8 +1,23 @@
 #include "ibvs.h"
+#include "posetools.h"
 #include <iostream>
 
 int main()
 {
+
+    std::vector<cv::Point2f> abc, def;
+
+    abc.push_back(cv::Point2f(0.2,0.3));
+    abc.push_back(cv::Point2f(2.3,4.5));
+    def = virtcam(abc,2, -1);
+
+    for(int j = 0; j<def.size(); j++)
+    {
+        std::cout << '\n' << abc[j];
+        std::cout <<" modified is: " << def[j] << " ";
+    }
+    std::cout <<'\n';
+/*
     IBVS def;
     def.update_Le(1.0);
     def.display_Le();
@@ -11,7 +26,7 @@ int main()
     std::cout << '\n' << '\n' << "Now change the pinv tolerance to 0.01: \n";
     def.update_tolerance(0.01);
     def.MP_psinv_Le();
-
+*/
 
     return 0;
 }

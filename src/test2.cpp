@@ -34,7 +34,8 @@ std::cout << "\n now should be 10->3\n";
       seconduv.push_back(10-j);
   }
   object.update_uv(seconduv);
-object.disp_uv();
+  object.disp_uv();
+  return 0;
 
 }
 
