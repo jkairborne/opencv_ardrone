@@ -1,4 +1,3 @@
-
 #include <opencv2/core/utility.hpp>
 #include "opencv2/video/tracking.hpp"
 #include "opencv2/imgproc.hpp"
@@ -6,6 +5,9 @@
 #include "opencv2/videoio.hpp"
 #include "opencv2/highgui.hpp"
 
+=======
+#include "ibvs.h"
+#include "posetools.h"
 #include <iostream>
 #include <ctype.h>
 
@@ -19,6 +21,31 @@ using namespace cv;
 
 static const int CBOARD_COL = 5;
 static const int CBOARD_ROW = 4;
+int main()
+{
+
+    std::vector<cv::Point2f> abc, def;
+
+    abc.push_back(cv::Point2f(0.2,0.3));
+    abc.push_back(cv::Point2f(2.3,4.5));
+    def = virtcam(abc,2, -1);
+
+    for(int j = 0; j<def.size(); j++)
+    {
+        std::cout << '\n' << abc[j];
+        std::cout <<" modified is: " << def[j] << " ";
+    }
+    std::cout <<'\n';
+/*
+    IBVS def;
+    def.update_Le(1.0);
+    def.display_Le();
+    def.MP_psinv_Le();
+
+    std::cout << '\n' << '\n' << "Now change the pinv tolerance to 0.01: \n";
+    def.update_tolerance(0.01);
+    def.MP_psinv_Le();
+*/
 
 int main()
 {

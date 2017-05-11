@@ -129,6 +129,7 @@ include_directories(
 set(HEADER_SOURCES
     src/momentfinder.cpp
     src/hsvselector.cpp
+    src/ibvs.cpp
 )
 
 
@@ -176,10 +177,10 @@ target_link_libraries(camshift ${catkin_LIBRARIES})
 add_executable(multicolor src/multicolor.cpp)
 target_link_libraries(multicolor ${catkin_LIBRARIES})
 
-add_executable(chessboard src/chessboard.cpp)
+add_executable(chessboard src/chessboard.cpp ${HEADER_SOURCES})
 target_link_libraries(chessboard ${catkin_LIBRARIES})
 
-add_executable(test2 src/test2.cpp)
+add_executable(test2 src/test2.cpp ${HEADER_SOURCES})
 target_link_libraries(test2 ${catkin_LIBRARIES})
 
 #add_executable(momentfinder src/momentfinder.cpp)
