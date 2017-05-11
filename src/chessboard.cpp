@@ -11,7 +11,18 @@
 #include "ibvs.h"
 
 #include "opencv2/opencv.hpp"
-#include <iostream>
+
+
+
+#include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <vector>
+#include <algorithm>
+
 
 static const int CBOARD_COL = 5;
 static const int CBOARD_ROW = 4;
@@ -19,74 +30,100 @@ static const int CBOARD_ROW = 4;
 using namespace std;
 using namespace cv;
 
-int main(){
 
-    VideoCapture vcap(0);
-      if(!vcap.isOpened()){
-             cout << "Error opening video stream or file" << endl;
-             return -1;
-      }
-      // Create IBVS object
-      IBVS ibvs = IBVS();
 
-   int frame_width=   vcap.get(CV_CAP_PROP_FRAME_WIDTH);
-   int frame_height=   vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
-   VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, Size(frame_width,frame_height),true);
+class ImageConverter
+{
+    ros::NodeHandle nh_;
+    image_transport::ImageTransport it_;
+    image_transport::Subscriber image_sub_;
+    IBVS ibvs;
 
-   for(;;){
-       Mat image;
-       vcap >> image;
+    // Function declarations
+    void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
-//       imshow( "Frame", image );
+public:
+    ImageConverter()
+        : it_(nh_)
+    {
+        ibvs = IBVS();
+        // Subscrive to input video feed and publish output video feed
+        image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
+           &ImageConverter::imageCb, this);
+    }
+}; // End class
 
-       vector<Point2f> corners;
-       Size chessSize(CBOARD_COL,CBOARD_ROW);
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "image_converter");
 
-       bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
-       if(patternfound)
+    ImageConverter ic;
+
+    ros::spin();
+    return 0;
+}
+
+void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
+{
+
+    cv_bridge::CvImagePtr cv_ptr;
+    try
+    {
+        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+        return;
+    }
+
+    Mat image;
+    image = cv_ptr->image;
+
+    vector<Point2f> corners;
+    Size chessSize(CBOARD_COL,CBOARD_ROW);
+
+    bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
+    if(patternfound)
+    {
+        Mat gray;
+        cvtColor(image,gray,CV_BGR2GRAY);
+        cornerSubPix(gray,corners,Size(11,11),Size(-1,-1),TermCriteria(CV_TERMCRIT_EPS+ CV_TERMCRIT_ITER,30,0.1));
+
+
+       // 0 4 15 19...
+       std::vector<Point2f> fourCorners;
+       fourCorners.push_back(corners[0]);
+       fourCorners.push_back(corners[CBOARD_ROW]);
+       fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
+       fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
+       fourCorners.resize(4);
+       for(int i = 0; i<4; i++)
        {
-           Mat gray;
-           cvtColor(image,gray,CV_BGR2GRAY);
-           cornerSubPix(gray,corners,Size(11,11),Size(-1,-1),TermCriteria(CV_TERMCRIT_EPS+ CV_TERMCRIT_ITER,30,0.1));
+           circle(image, fourCorners[i], 1, cv::Scalar( 50. ), -1 );
+           std::string display_string;
+           std::stringstream out;
+           out << i;
+           display_string = out.str();
 
+           //Add numbering to the four points discovered.
+           cv::putText( image, display_string, fourCorners[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
+       }
 
-           // 0 4 15 19...
-           std::vector<Point2f> fourCorners;
-           fourCorners.push_back(corners[0]);
-           fourCorners.push_back(corners[CBOARD_ROW]);
-           fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
-           fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
-           fourCorners.resize(4);
-           for(int i = 0; i<4; i++)
-           {
-               circle(image, fourCorners[i], 1, cv::Scalar( 50. ), -1 );
-               std::string display_string;
-               std::stringstream out;
-               out << i;
-               display_string = out.str();
-
-               //Add numbering to the four points discovered.
-               cv::putText( image, display_string, fourCorners[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
-           }
-
-           ibvs.update_uv(fourCorners);
-           ibvs.update_z_est(fourCorners);
- /*          ibvs.disp_uv();
-           ibvs.update_Le(1);
-           ibvs.display_Le();
-           ibvs.MP_psinv_Le();
-    std::string IBVS_disp_str;
-    stringstream ib_str;*/
+       ibvs.update_uv(fourCorners);
+       ibvs.update_z_est(fourCorners);
+/*          ibvs.disp_uv();
+       ibvs.update_Le(1);
+       ibvs.display_Le();
+       ibvs.MP_psinv_Le();
+std::string IBVS_disp_str;
+stringstream ib_str;*/
 
 //           cout << corners << endl;
 
-           namedWindow("Image2");
-           imshow("Image2",image);
-        }
-
-       video.write(image);
-       char c = (char)waitKey(33);
-       if( c == 27 ) break;
+       namedWindow("Image2");
+       imshow("Image2",image);
     }
-  return 0;
+
 }
+
