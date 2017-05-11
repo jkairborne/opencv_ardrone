@@ -2,6 +2,30 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include <opencv2/highgui/highgui.hpp>
+#include <cmath>
+
+velocity IBVS::calculate_vc()
+{
+    MP_psinv_Le();
+    vc = Le_psinv * ImagePts;
+
+    return vc;
+}
+
+void IBVS::update_z_est(std::vector<cv::Point2f> pts)
+{
+    double delta_x1, delta_y1, delta_x2, delta_y2, dist1, dist2, avg_dist;
+
+    dist1 = cv::norm(pts[3]-pts[0]);
+    dist2 = cv::norm(pts[2]-pts[1]);
+    
+    avg_dist = 0.5*(dist1+dist2);
+
+    z_est = bsln*focal_lngth/avg_dist;
+    std::cout << z_est << "\n";
+}
+
+
 
 void IBVS::MP_psinv_Le()
 {
@@ -107,9 +131,11 @@ ImagePts(update_pair*2,0) = new_u;
 ImagePts(update_pair*2+1,0) = new_v;
 }
 
-IBVS::IBVS()
+IBVS::IBVS(double baseline, double focal_length)
 {
     Pinv_tolerance = 0.1;
+    focal_lngth = focal_length;
+    bsln = baseline;
 
         ImagePts(0,0) = 1;
         ImagePts(1,0) = 2;

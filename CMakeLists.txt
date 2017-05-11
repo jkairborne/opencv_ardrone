@@ -130,6 +130,7 @@ set(HEADER_SOURCES
     src/momentfinder.cpp
     src/hsvselector.cpp
     src/ibvs.cpp
+    src/navdata_cb_ardrone.cpp
 )
 
 

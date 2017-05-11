@@ -1,11 +1,17 @@
-#include <opencv2/core/utility.hpp>
-#include "opencv2/video/tracking.hpp"
-#include "opencv2/imgproc.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/videoio.hpp"
-#include "opencv2/highgui.hpp"
+#include <iostream>
+#include "navdata_cb_ardrone.h"
 
-=======
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "image_converter");
+    navdata_cb_ardrone nav = navdata_cb_ardrone();
+
+    ros::spin();
+    return 0;
+}
+
+/*
+ * This test was just to check a bit of vector stuff
 #include "ibvs.h"
 #include "posetools.h"
 #include <iostream>
@@ -36,6 +42,11 @@ int main()
         std::cout <<" modified is: " << def[j] << " ";
     }
     std::cout <<'\n';
+}
+*/
+
+
+
 /*
     IBVS def;
     def.update_Le(1.0);
@@ -45,7 +56,7 @@ int main()
     std::cout << '\n' << '\n' << "Now change the pinv tolerance to 0.01: \n";
     def.update_tolerance(0.01);
     def.MP_psinv_Le();
-*/
+
 
 int main()
 {
@@ -122,7 +133,7 @@ int main()
     return 0;
 }
 
-
+*/
 
 /*
  *

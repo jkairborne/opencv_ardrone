@@ -70,12 +70,13 @@ int main(){
            }
 
            ibvs.update_uv(fourCorners);
-           ibvs.disp_uv();
+           ibvs.update_z_est(fourCorners);
+ /*          ibvs.disp_uv();
            ibvs.update_Le(1);
            ibvs.display_Le();
            ibvs.MP_psinv_Le();
     std::string IBVS_disp_str;
-    stringstream ib_str;
+    stringstream ib_str;*/
 
 //           cout << corners << endl;
 
