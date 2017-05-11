@@ -1,18 +1,97 @@
-#include "ibvs.h"
+
+#include <opencv2/core/utility.hpp>
+#include "opencv2/video/tracking.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/videoio.hpp"
+#include "opencv2/highgui.hpp"
+
 #include <iostream>
+#include <ctype.h>
+
+#include "ibvs.h"
+
+#include "opencv2/opencv.hpp"
+#include <iostream>
+
+using namespace std;
+using namespace cv;
+
+static const int CBOARD_COL = 5;
+static const int CBOARD_ROW = 4;
 
 int main()
 {
-    IBVS def;
-    def.update_Le(1.0);
-    def.display_Le();
-    def.MP_psinv_Le();
+    string filename = "/home/jason/Desktop/vidibvs.avi";
+    VideoCapture capture(filename);
+    Mat image;
 
-    std::cout << '\n' << '\n' << "Now change the pinv tolerance to 0.01: \n";
-    def.update_tolerance(0.01);
-    def.MP_psinv_Le();
+      // Create IBVS object
+      IBVS ibvs = IBVS();
 
+    if( !capture.isOpened() ) {throw "Error when reading steam_avi";}
 
+   namedWindow("w", 1);
+   for( ; ; )
+   {
+       capture >> image;
+       //if(!frame)
+       //    break;
+       imshow("w", image);
+       waitKey(20); // waits to display frame
+
+       int frame_width=   capture.get(CV_CAP_PROP_FRAME_WIDTH);
+       int frame_height=   capture.get(CV_CAP_PROP_FRAME_HEIGHT);
+       VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, Size(frame_width,frame_height),true);    
+
+       vector<Point2f> corners;
+       Size chessSize(CBOARD_COL,CBOARD_ROW);
+
+       std::vector<Point2f> fourCorners;
+
+       bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
+       if(patternfound)
+       {
+           Mat gray;
+           cvtColor(image,gray,CV_BGR2GRAY);
+           cornerSubPix(gray,corners,Size(11,11),Size(-1,-1),TermCriteria(CV_TERMCRIT_EPS+ CV_TERMCRIT_ITER,30,0.1));
+
+    
+               // 0 4 15 19...
+               fourCorners.push_back(corners[0]);
+               fourCorners.push_back(corners[CBOARD_ROW]);
+               fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
+               fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
+    
+               ibvs.update_uv(fourCorners);
+               ibvs.update_Le(1);
+               Eigen::Matrix<float, 6, 1> vc;
+               vc = ibvs.calculate_vc();
+
+               for(int i = 0; i<4; i++)
+               {
+                   circle(image, fourCorners[i], 1, cv::Scalar( 50. ), -1 );
+                   std::string display_string;
+                   std::stringstream out;
+                   out << i;
+                   display_string = out.str();
+    
+                   //Add numbering to the four points discovered.
+                   cv::putText( image, display_string, fourCorners[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
+               }
+               std::string IBVS_disp_str;
+               stringstream ib_str;
+               ib_str << vc(0,0) << " " << vc(1,0);
+               IBVS_disp_str = ib_str.str();
+               cv::putText( image, IBVS_disp_str, cv::Point2f(100,100), CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
+
+         }
+      video.write(image);
+      imshow( "Frame", image );
+      char c = (char)waitKey(33);
+      if( c == 27 ) break;
+   
+        }
     return 0;
 }
 

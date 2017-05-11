@@ -8,7 +8,7 @@
 typedef Eigen::Matrix<float, 8, 6> LeMat;
 typedef Eigen::Matrix<float, 6, 8> LePlus;
 typedef Eigen::Matrix<float, 8, 1> uv;
-
+typedef Eigen::Matrix<float, 6, 1> velocity;
 
 class IBVS {
     uv ImagePts;
@@ -16,6 +16,7 @@ class IBVS {
     LePlus Le_psinv, DiagMat;
     double old_z_hat;
     double Pinv_tolerance;
+    velocity vc;
   public:
     void update_uv_row (int update_pair, double new_u, double new_v);
     void update_uv (std::vector<cv::Point2f> uv_new);
@@ -28,7 +29,17 @@ class IBVS {
     void update_Le(double);
     void display_Le();
     void MP_psinv_Le();
+    velocity calculate_vc();
 };
+
+velocity IBVS::calculate_vc()
+{
+    MP_psinv_Le();
+    vc = Le_psinv * ImagePts;
+
+    return vc;
+}
+
 
 void IBVS::MP_psinv_Le()
 {

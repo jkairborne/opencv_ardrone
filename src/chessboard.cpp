@@ -31,18 +31,16 @@ int main(){
 
    int frame_width=   vcap.get(CV_CAP_PROP_FRAME_WIDTH);
    int frame_height=   vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
-//   VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, Size(frame_width,frame_height),true);
+   VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, Size(frame_width,frame_height),true);
 
    for(;;){
        Mat image;
        vcap >> image;
 
-       imshow( "Frame", image );
+//       imshow( "Frame", image );
 
        vector<Point2f> corners;
        Size chessSize(CBOARD_COL,CBOARD_ROW);
-
-       std::vector<Point2f> fourCorners;
 
        bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
        if(patternfound)
@@ -53,11 +51,12 @@ int main(){
 
 
            // 0 4 15 19...
+           std::vector<Point2f> fourCorners;
            fourCorners.push_back(corners[0]);
            fourCorners.push_back(corners[CBOARD_ROW]);
            fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
            fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
-
+           fourCorners.resize(4);
            for(int i = 0; i<4; i++)
            {
                circle(image, fourCorners[i], 1, cv::Scalar( 50. ), -1 );
@@ -75,15 +74,16 @@ int main(){
            ibvs.update_Le(1);
            ibvs.display_Le();
            ibvs.MP_psinv_Le();
+    std::string IBVS_disp_str;
+    stringstream ib_str;
 
-
-           cout << corners << endl;
+//           cout << corners << endl;
 
            namedWindow("Image2");
            imshow("Image2",image);
         }
 
-  //     video.write(image);
+       video.write(image);
        char c = (char)waitKey(33);
        if( c == 27 ) break;
     }
