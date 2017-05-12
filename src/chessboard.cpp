@@ -1,18 +1,15 @@
+/*
 #include <opencv2/core/utility.hpp>
 #include "opencv2/video/tracking.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/videoio.hpp"
 #include "opencv2/highgui.hpp"
-
+*/
 #include <iostream>
 #include <ctype.h>
-
 #include "ibvs.h"
-
 #include "opencv2/opencv.hpp"
-
-
 
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
@@ -55,8 +52,9 @@ public:
 
 int main(int argc, char** argv)
 {
+    std::cout << "now at the beginning of all";
     ros::init(argc, argv, "image_converter");
-
+std::cout << "Ros inited";
     ImageConverter ic;
 
     ros::spin();
@@ -79,7 +77,7 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
     Mat image;
     image = cv_ptr->image;
-
+std::cout << "created image";
     vector<Point2f> corners;
     Size chessSize(CBOARD_COL,CBOARD_ROW);
 
@@ -98,31 +96,25 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
        fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
        fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
        fourCorners.resize(4);
-       for(int i = 0; i<4; i++)
-       {
-           circle(image, fourCorners[i], 1, cv::Scalar( 50. ), -1 );
-           std::string display_string;
-           std::stringstream out;
-           out << i;
-           display_string = out.str();
 
-           //Add numbering to the four points discovered.
-           cv::putText( image, display_string, fourCorners[i], CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255.), 1, 1);
-       }
-
+       ibvs.addPtsToImg(image,fourCorners);
+       ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(255,255,0.0));
        ibvs.update_uv(fourCorners);
        ibvs.update_z_est(fourCorners);
-/*          ibvs.disp_uv();
-       ibvs.update_Le(1);
-       ibvs.display_Le();
+       ibvs.calculate_deltaS();
+       ibvs.update_Le();
        ibvs.MP_psinv_Le();
-std::string IBVS_disp_str;
-stringstream ib_str;*/
+       std::cout << '\n' << "uv: ";
+       ibvs.disp_uv();
+       ibvs.calculate_vc();
+
+
 
 //           cout << corners << endl;
 
        namedWindow("Image2");
        imshow("Image2",image);
+       cv::waitKey(3);
     }
 
 }

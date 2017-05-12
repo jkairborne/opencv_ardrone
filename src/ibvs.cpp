@@ -2,14 +2,33 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <cmath>
 
 velocity IBVS::calculate_vc()
 {
-    MP_psinv_Le();
-    vc = Le_psinv * ImagePts;
+    vc = Le_psinv * deltaS;
+    std::cout << " velocity is: " << vc(0,0) << " " << vc(1,0) << " " << vc(2,0) << " " << vc(3,0) << " " << vc(4,0) << " " << vc(5,0) << '\n';
 
     return vc;
+}
+
+void IBVS::calculate_deltaS()
+{
+    deltaS = ImagePts - desiredPts;
+}
+
+
+
+std::vector<cv::Point2f> IBVS::getDesPtsPt2F()
+{
+
+    std::vector<cv::Point2f> output(desiredPts.rows()/2);
+    for(int i = 0 ; i < desiredPts.rows()/2 ; i++)
+    {
+        output[i] = cv::Point2f(desiredPts(2*i),desiredPts(2*i+1));
+    }
+    return output;
 }
 
 void IBVS::update_z_est(std::vector<cv::Point2f> pts)
@@ -95,7 +114,12 @@ void IBVS::update_Le(double z_hat)
 	IBVS::update_Le_row(1,z_hat);
 	IBVS::update_Le_row(2,z_hat);
 	IBVS::update_Le_row(3,z_hat);
-	IBVS::update_Le_row(4,z_hat);
+    IBVS::update_Le_row(4,z_hat);
+}
+
+void IBVS::update_Le()
+{
+    update_Le(z_est);
 }
 
 void IBVS::update_uv (std::vector<cv::Point2f> uv_new)
@@ -136,16 +160,11 @@ IBVS::IBVS(double baseline, double focal_length)
     Pinv_tolerance = 0.1;
     focal_lngth = focal_length;
     bsln = baseline;
+    desiredPts << 270,125,370,125,270,195,370,195;
 
-        ImagePts(0,0) = 1;
-        ImagePts(1,0) = 2;
-	ImagePts(2,0) = 3;
-	ImagePts(3,0) = 4;
-	ImagePts(4,0) = 5;
-	ImagePts(5,0) = 6;
-        ImagePts(6,0) = 7;
-        ImagePts(7,0) = 8;
-	Le <<	0,0,0,0,0,0,0,0,
+    ImagePts << 1,2,3,4,5,6,7,8;
+
+    Le <<	0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
@@ -167,12 +186,24 @@ IBVS::IBVS(double baseline, double focal_length)
 			0,0,0,0,0,0,
 			0,0,0,0,0,0,
 			0,0,0,0,0,0;
-
 }
 
 void IBVS::update_tolerance(double newval)
 {
     Pinv_tolerance = newval;
+}
+
+void IBVS::update_desiredPts(std::vector<cv::Point2f> new_desPts)
+{
+    if(new_desPts.size() != 4) {std::cout << "Your update_desiredPts function call does not contain 4 pairs";}
+    else
+    {
+       for(int j=0;j<new_desPts.size();j++)
+       {
+           ImagePts(j*2,0) = new_desPts[j].x;
+           ImagePts(j*2+1,0) = new_desPts[j].y;
+       }
+    }
 }
 
 void IBVS::disp_uv_row(int n)
@@ -187,4 +218,19 @@ void IBVS::disp_uv()
         std::cout << ImagePts[i] << " ";
     }//end for
     std::cout << std::endl;
+}
+
+void IBVS::addPtsToImg(cv::Mat& img, std::vector<cv::Point2f> ptsToAdd, cv::Scalar color)
+{
+    for(int i = 0; i<ptsToAdd.size(); i++)
+    {
+        cv::circle(img, ptsToAdd[i], 1, color, -1 );
+        std::string display_string;
+        std::stringstream out;
+        out << i;
+        display_string = out.str();
+
+        //Add numbering to the four points discovered.
+        cv::putText( img, display_string, ptsToAdd[i], CV_FONT_HERSHEY_COMPLEX, 1,color, 1, 1);
+    }
 }// end disp_uv
