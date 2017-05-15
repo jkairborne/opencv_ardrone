@@ -15,10 +15,47 @@ velocity IBVS::calculate_vc()
 
 void IBVS::calculate_deltaS()
 {
+
     deltaS = ImagePts - desiredPts;
+
+    std::cout << "deltaS:  ";
+    for (int i = 0; i<deltaS.rows();i++)
+    {
+        std::cout << deltaS[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
 }
 
 
+
+std::vector<cv::Point2f> IBVS::eigenToPoint2fVector(Eigen::MatrixXd eigenMat)
+{
+    if (eigenMat.cols()!=1 || eigenMat.rows()%2 ) {std::cout << "eigenToPoint2fVector is receiving wrong dimension matrix - either not single column, or not even number of rows";}
+    std::vector<cv::Point2f> output;
+
+    int len = eigenMat.rows()/2;
+    for(int i = 0; i< len; i++)
+    {
+        cv::Point2f newentry = cv::Point2f(eigenMat(2*i,0), eigenMat(2*i+1,0));
+
+        output.push_back(newentry);
+    }
+    return output;
+}
+
+Eigen::MatrixXf IBVS::point2fVectorToEigenVec(std::vector<cv::Point2f> pnt2fVec)
+{
+
+//customize for uv etc        if (pnt2fVec.size() == 4)
+        Eigen::MatrixXf output;
+        for (int i = 0; i<pnt2fVec.size(); i++)
+        {
+            output(2*i) = pnt2fVec[i].x;
+            output(2*i+1) = pnt2fVec[i].y;
+        }
+
+        return output;
+}
 
 std::vector<cv::Point2f> IBVS::getDesPtsPt2F()
 {
@@ -41,7 +78,7 @@ void IBVS::update_z_est(std::vector<cv::Point2f> pts)
     avg_dist = 0.5*(dist1+dist2);
 
     z_est = bsln*focal_lngth/avg_dist;
-    std::cout << z_est << "\n";
+    std::cout << '\n' << z_est << "\n";
 }
 
 
@@ -80,7 +117,7 @@ void IBVS::MP_psinv_Le()
 
     Le_psinv = V*DiagMat*UT;
 
-    std::cout << "Le_Psinv: \n" <<Le_psinv << '\n';
+    std::cout << "Le_Psinv: \n" <<Le_psinv << '\n' << '\n';
 
 }
 
@@ -122,38 +159,68 @@ void IBVS::update_Le()
     update_Le(z_est);
 }
 
-void IBVS::update_uv (std::vector<cv::Point2f> uv_new)
+void IBVS::update_uv (std::vector<cv::Point2f> uv_new, bool updateDesired)
 {
     if(uv_new.size() != 4) {std::cout << "Your update_uv function call does not contain 4 pairs";}
     else
     {
-       for(int j=0;j<uv_new.size();j++)
+       if (updateDesired)
        {
-           ImagePts(j*2,0) = uv_new[j].x;
-           ImagePts(j*2+1,0) = uv_new[j].y;
+           for(int j=0;j<uv_new.size();j++)
+           {
+               desiredPts(j*2,0) = uv_new[j].x;
+               desiredPts(j*2+1,0) = uv_new[j].y;
+           }
+       }
+       else
+       {
+            for(int j=0;j<uv_new.size();j++)
+            {
+                ImagePts(j*2,0) = uv_new[j].x;
+                ImagePts(j*2+1,0) = uv_new[j].y;
+            }
        }
     }
 }
 
-void IBVS::update_uv (std::vector<double> uv_new)
+void IBVS::update_uv (std::vector<double> uv_new, bool updateDesired)
 {
     if(uv_new.size() != 8) {std::cout << "Your update_uv double function call does not contain 8 numbers";}
     else
     {
-       for(int j=0;j<uv_new.size();j++)
-       {
-           ImagePts(j,0) = uv_new[j];
-       }
+        if(updateDesired)
+        {
+            for(int j=0;j<uv_new.size();j++)
+            {
+                desiredPts(j,0) = uv_new[j];
+            }
+
+        }
+        else
+        {
+            for(int j=0;j<uv_new.size();j++)
+            {
+                ImagePts(j,0) = uv_new[j];
+            }
+
+        }
     }
 }
 
-
-
-void IBVS::update_uv_row (int update_pair, double new_u, double new_v)
+void IBVS::update_uv_row (int update_pair, double new_u, double new_v, bool updateDesired)
 {
-ImagePts(update_pair*2,0) = new_u;
-ImagePts(update_pair*2+1,0) = new_v;
+    if(updateDesired)
+    {
+        desiredPts(update_pair*2,0) = new_u;
+        desiredPts(update_pair*2+1,0) = new_v;
+    }
+    else
+    {
+        ImagePts(update_pair*2,0) = new_u;
+        ImagePts(update_pair*2+1,0) = new_v;
+    }
 }
+
 
 IBVS::IBVS(double baseline, double focal_length)
 {

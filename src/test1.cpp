@@ -1,3 +1,82 @@
+#include "Eigen/Dense"
+#include <iostream>
+#include <vector>
+#include "opencv2/opencv.hpp"
+
+using namespace std;
+using namespace Eigen;
+typedef Eigen::Matrix<float, 8, 6> LeMat;
+
+
+std::vector<cv::Point2f> eigenToPoint2fVector(Eigen::MatrixXd eigenMat)
+{
+    if (eigenMat.cols()!=1 || eigenMat.rows()%2 ) {std::cout << "eigenToPoint2fVector is receiving wrong dimension matrix - either not single column, or not even number of rows";}
+    std::vector<cv::Point2f> output;
+
+    int len = eigenMat.rows()/2;
+    for(int i = 0; i< len; i++)
+    {
+        cv::Point2f newentry = cv::Point2f(eigenMat(2*i,0), eigenMat(2*i+1,0));
+
+        output.push_back(newentry);
+    }
+    return output;
+}
+
+Eigen::MatrixXf point2fVectorToEigenVec(std::vector<cv::Point2f> pnt2fVec)
+{
+
+//customize for uv etc        if (pnt2fVec.size() == 4)
+        Eigen::MatrixXf output;
+        for (int i = 0; i<pnt2fVec.size(); i++)
+        {
+            output(2*i) = pnt2fVec[i].x;
+            output(2*i+1) = pnt2fVec[i].y;
+        }
+
+        return output;
+}
+
+
+
+
+
+int main()
+{
+std::cout << "Just before shit goes down";
+
+    cv::Point2f cv1 = cv::Point2f(10,20);
+    cv::Point2f cv2 = cv::Point2f(20,40);
+    cv::Point2f cv3 = cv::Point2f(-10,-20);
+    cv::Point2f cv4 = cv::Point2f(-20,-30);
+    std::vector<cv::Point2f> vecPts;
+    vecPts.push_back(cv1);
+    vecPts.push_back(cv2);
+    vecPts.push_back(cv3);
+    vecPts.push_back(cv4);
+std::cout << "Just before shit goes down";
+    Eigen::Matrix<float,8,1> firsteig;
+    firsteig = point2fVectorToEigenVec(vecPts);
+
+    std::cout << firsteig;
+/*    LeMat Le;
+
+    std::vector<double> newLe(48);
+    for(int i=0;i<48;i++)
+    {
+       newLe.push_back(i);
+    }
+
+//    Le = Map<MatrixXf>(array) << endl;
+*/
+    return 0;
+}
+
+
+
+
+
+/*
 #include <iostream>
 #include "navdata_cb_ardrone.h"
 
@@ -9,6 +88,8 @@ int main(int argc, char** argv)
     ros::spin();
     return 0;
 }
+*/
+
 
 /*
  * This test was just to check a bit of vector stuff

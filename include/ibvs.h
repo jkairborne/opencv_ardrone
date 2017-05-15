@@ -20,14 +20,15 @@ class IBVS {
     velocity vc;
 
     //function declarations
-
+    std::vector<cv::Point2f> eigenToPoint2fVector(Eigen::MatrixXd eigenMat);
+    Eigen::MatrixXf point2fVectorToEigenVec(std::vector<cv::Point2f> pnt2fVec);
     //void update_z_est();
   public:
         std::vector<cv::Point2f> getDesPtsPt2F();
     void update_z_est(std::vector<cv::Point2f> pts);
-    void update_uv_row (int update_pair, double new_u, double new_v);
-    void update_uv (std::vector<cv::Point2f> uv_new);
-    void update_uv (std::vector<double> uv_new); //Overload for vector of doubles
+    void update_uv_row (int update_pair, double new_u, double new_v, bool updateDesired = false);
+    void update_uv (std::vector<cv::Point2f> uv_new, bool updateDesired = false);
+    void update_uv (std::vector<double> uv_new, bool updateDesired = false); //Overload for vector of doubles
     void update_tolerance(double newval);
     void update_desiredPts(std::vector<cv::Point2f> new_desPts);
     IBVS(double baseline = 0.15, double focal_length = 700.00);

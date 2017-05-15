@@ -20,14 +20,11 @@
 #include <vector>
 #include <algorithm>
 
-
 static const int CBOARD_COL = 5;
 static const int CBOARD_ROW = 4;
 
 using namespace std;
 using namespace cv;
-
-
 
 class ImageConverter
 {
