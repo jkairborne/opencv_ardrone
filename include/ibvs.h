@@ -20,8 +20,7 @@ class IBVS {
     velocity vc;
 
     //function declarations
-    std::vector<cv::Point2f> eigenToPoint2fVector(Eigen::MatrixXd eigenMat);
-    Eigen::MatrixXf point2fVectorToEigenVec(std::vector<cv::Point2f> pnt2fVec);
+
     //void update_z_est();
   public:
         std::vector<cv::Point2f> getDesPtsPt2F();
