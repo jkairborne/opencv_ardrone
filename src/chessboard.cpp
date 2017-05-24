@@ -32,7 +32,7 @@ class ImageConverter
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
     IBVS ibvs;
-
+    bool correctDesiredPts;
     // Function declarations
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
@@ -44,6 +44,8 @@ public:
         // Subscrive to input video feed and publish output video feed
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
+        
+        correctDesiredPts = true;
     }
 }; // End class
 
@@ -77,6 +79,7 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 std::cout << "created image";
     vector<Point2f> corners;
     Size chessSize(CBOARD_COL,CBOARD_ROW);
+            namedWindow("Image2");
 
     bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
     if(patternfound)
@@ -85,7 +88,6 @@ std::cout << "created image";
         cvtColor(image,gray,CV_BGR2GRAY);
         cornerSubPix(gray,corners,Size(11,11),Size(-1,-1),TermCriteria(CV_TERMCRIT_EPS+ CV_TERMCRIT_ITER,30,0.1));
 
-
        // 0 4 15 19...
        std::vector<Point2f> fourCorners;
        fourCorners.push_back(corners[0]);
@@ -93,25 +95,32 @@ std::cout << "created image";
        fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
        fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
        fourCorners.resize(4);
-
+/*
+       if(correctDesiredPts)
+       {
+           ibvs.rearrangeDesPts(fourCorners);
+       }
+*/
        ibvs.addPtsToImg(image,fourCorners);
-       ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(255,255,0.0));
+       ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
        ibvs.update_uv(fourCorners);
        ibvs.update_z_est(fourCorners);
        ibvs.calculate_deltaS();
        ibvs.update_Le();
        ibvs.MP_psinv_Le();
        std::cout << '\n' << "uv: ";
-       ibvs.disp_uv();
+//       ibvs.disp_uv();
        ibvs.calculate_vc();
-
-
-
+//    ibvs.display_params();
 //           cout << corners << endl;
-
-       namedWindow("Image2");
        imshow("Image2",image);
        cv::waitKey(3);
+    }
+    else
+    {
+        imshow("Image2",image);
+        correctDesiredPts = true;
+        cv::waitKey(3);
     }
 
 }

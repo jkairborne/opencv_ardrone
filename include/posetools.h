@@ -10,20 +10,35 @@
 #include "std_msgs/Float64.h"
 #include "std_msgs/String.h"
 #include <opencv2/highgui/highgui.hpp>
+#include <Eigen/Dense>
 
 using namespace cv;
 using namespace std;
 
-std::vector<Point2f> virtcam(std::vector<Point2f> input, double roll, double pitch)
+std::vector<Point2f> virtcam(std::vector<Point2f> input, double roll, double pitch, double z_in)
 {
 //NEED TO ADD ACTUAL PROCESSING
     std::vector<Point2f> output(input.size());
 
+    
     for(int i = 0 ; i < input.size(); i++)
     {
         output[i].x = input[i].x * roll;
         output[i].y = input[i].y * pitch;
+//	std::cout << "In the virtcam callback" << "outputs: " << output[i].x << " y: " << output[i].y << '\n';
     }
+    double xc, yc, zc, xvc, yvc, zvc;
+
+    xc = roll*input[0].x/z_in;
+    
+    Eigen::Matrix<double,3,3> derotate;
+    derotate(0,0) = 1;
+    derotate(1,1) = 1;
+    derotate(2,2) = 1;
+
+ //   std::cout << '\n' << "derotate: " << '\n' << derotate;
+
+
     return output;
 }
 
