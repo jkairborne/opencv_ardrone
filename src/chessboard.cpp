@@ -76,7 +76,7 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
     Mat image;
     image = cv_ptr->image;
-std::cout << "created image";
+
     vector<Point2f> corners;
     Size chessSize(CBOARD_COL,CBOARD_ROW);
             namedWindow("Image2");
@@ -95,12 +95,12 @@ std::cout << "created image";
        fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
        fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
        fourCorners.resize(4);
-/*
+
        if(correctDesiredPts)
        {
            ibvs.rearrangeDesPts(fourCorners);
        }
-*/
+
        ibvs.addPtsToImg(image,fourCorners);
        ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
        ibvs.update_uv(fourCorners);
@@ -108,7 +108,7 @@ std::cout << "created image";
        ibvs.calculate_deltaS();
        ibvs.update_Le();
        ibvs.MP_psinv_Le();
-       std::cout << '\n' << "uv: ";
+//       std::cout << '\n' << "uv: ";
 //       ibvs.disp_uv();
        ibvs.calculate_vc();
 //    ibvs.display_params();

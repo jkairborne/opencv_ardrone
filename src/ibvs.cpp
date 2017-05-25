@@ -1,3 +1,5 @@
+#define _USE_MATH_DEFINES
+
 #include "ibvs.h"
 #include <iostream>
 #include <Eigen/Dense>
@@ -76,6 +78,35 @@ void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
     desPt2f = uvToPoint2f(desiredPts);
     desPt2f.resize(4);
 
+    double angleCurrent, angleDiff;
+
+    angleCurrent = atan2((fourCorners[1].y - fourCorners[0].y),(fourCorners[1].x-fourCorners[0].x));
+    std::cout << angleCurrent << "\n";
+//Watch out, this goes increasing angles downwards.
+    angleDiff = angleCurrent - angleDes;
+
+    if(angleDiff >= 3*M_PI/4 || angleDiff < -3*M_PI/4)
+    {
+        desiredPts << 370,195,270,195,370,125,270,125;
+        //std::cout <<'\n' << desiredPts << '\n';
+    }
+    else if(angleDiff >= M_PI/4)
+    {
+        std::cout << "value is between M_PI/4 and 3PI/4, rotating clockwise by 90 deg" << '\n';
+        desiredPts << 370,195,270,125,370,125,270,195;
+                std::cout <<'\n' << desiredPts << '\n';
+    }
+    else if(angleDiff <= -M_PI/4)
+    {
+        desiredPts << 370,125,370,195,270,125,270,195;
+                std::cout <<'\n' << desiredPts << '\n';
+    }
+    else
+    {
+        std::cout << "no change" << '\n';
+    }
+
+/*
     // This is a vector of vectors (aka a matrix), 4x4 in most cases, and it will house the distance from each point to the other.
     double rtn_vec[numpts][numpts];
 
@@ -163,6 +194,7 @@ void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
                  desiredPts[6] << "   " <<\
                  desiredPts[7] <<\
                  std::endl;
+*/
 } // end pvt_identify_pt
 
 //This function is simply meant to help with the wraparound of the whole
@@ -188,13 +220,13 @@ std::vector<cv::Point2f> IBVS::uvToPoint2f(uv input)
     int ptnum = input.rows()/2;
     std::vector<cv::Point2f> output(ptnum);
 
-    std::cout << "inside uvToPoint2f: \n" << "ptnum: " << ptnum<< " input: " << input << '\n';
+//    std::cout << "inside uvToPoint2f: \n" << "ptnum: " << ptnum<< " input: " << input << '\n';
 
     for(int i = 0; i<ptnum;i++)
     {
         output[i].x = input(2*i,0);
         output[i].y = input(2*i+1,0);
-        std::cout<< "in for loop: i = " << i << " output(x)/output(y): " << output[i].x << "/" << output[i].y;
+//        std::cout<< "in for loop: i = " << i << " output(x)/output(y): " << output[i].x << "/" << output[i].y;
     }
 
     return output;
@@ -373,12 +405,16 @@ void IBVS::update_uv_row (int update_pair, double new_u, double new_v, bool upda
 }
 
 
-IBVS::IBVS(double baseline, double focal_length)
+IBVS::IBVS(double baseline, double focal_length, double camWidth, double camHeight)
 {
     Pinv_tolerance = 0.1;
     correctDesiredPts = true;
     focal_lngth = focal_length;
     bsln = baseline;
+    angleDes = 0; // sets the angle between points 0 and 1 desired
+    camWdth = camWidth;
+    camHght = camHeight;
+    imageCenter = cv::Point2f(camWdth/2,camHght/2);
     desiredPts << 270,125,370,125,270,195,370,195;
 
     ImagePts << 1,2,3,4,5,6,7,8;
@@ -425,6 +461,23 @@ void IBVS::update_desiredPts(std::vector<cv::Point2f> new_desPts)
     }
 }
 
+void IBVS::calc_desiredPts(cv::Point2f center, double offsetx, double offsety, double psi)
+{
+    Eigen::Matrix<double,2,4> vecMat;
+    Eigen::Rotation2D<double> rotMat(90);
+    //rotMat = Eigen::Rotation2D;
+    vecMat << -offsetx,offsetx,-offsetx,offsetx,\
+            -offsety,-offsety,offsety,offsety;
+
+    std::cout << "vecMat: \n" << vecMat << "\n";
+    std::vector<cv::Point2f> ctr2ptVec(4);
+    ctr2ptVec[0] = cv::Point2f(-offsetx,-offsety);
+    ctr2ptVec[1] = cv::Point2f(offsetx,-offsety);
+    ctr2ptVec[2] = cv::Point2f(-offsetx,offsety);
+    ctr2ptVec[3] = cv::Point2f(offsetx,offsety);
+   // desiredPts =
+}
+
 void IBVS::disp_uv_row(int n)
 {
 std::cout << "\n Pair " << (n+1) << ": " <<"u = " << ImagePts(2*n,0) << ", v = " << ImagePts(2*n+1,0)<< '\n';;
@@ -452,4 +505,4 @@ void IBVS::addPtsToImg(cv::Mat& img, std::vector<cv::Point2f> ptsToAdd, cv::Scal
         //Add numbering to the four points discovered.
         cv::putText( img, display_string, ptsToAdd[i], CV_FONT_HERSHEY_COMPLEX, 1,color, 1, 1);
     }
-}// end disp_uv
+}// end addPtsToImg

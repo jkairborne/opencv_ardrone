@@ -19,12 +19,56 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
-static const int CBOARD_COL = 5;
-static const int CBOARD_ROW = 4;
+#define PI 3.14159265
 
-using namespace std;
-using namespace cv;
+std::vector<cv::Point2f> calc_desiredPts(cv::Point2f center, double offsetx, double offsety, double psi)
+{
+    Eigen::Matrix<double,2,4> vecMat, rVecMat1;
+
+    Eigen::Matrix<double,2,2> rotMat;
+
+    rotMat(0,0) = cos(psi*PI/180);
+    rotMat(1,1) = cos(psi*PI/180);
+    rotMat(1,0) = sin(psi*PI/180);
+    rotMat(0,1) = -sin(psi*PI/180);
+
+    vecMat << -offsetx,offsetx,-offsetx,offsetx,\
+            -offsety,-offsety,offsety,offsety;
+
+rVecMat1 = rotMat*vecMat;
+
+
+//    std::cout << "RotationMatrix: \n" << rotMat << "\n";
+    std::cout << "vecMat: \n" << vecMat << "\n";
+    std::cout << "vecMat1: \n" << rVecMat1 << "\n";
+
+
+
+    std::vector<cv::Point2f> ctr2ptVec(4);
+    ctr2ptVec[0] = center+ cv::Point2f(rVecMat1(0,0),rVecMat1(1,0));
+    ctr2ptVec[1] = center+ cv::Point2f(rVecMat1(0,1),rVecMat1(1,1));
+    ctr2ptVec[2] = center+ cv::Point2f(rVecMat1(0,2),rVecMat1(1,2));
+    ctr2ptVec[3] = center+ cv::Point2f(rVecMat1(0,3),rVecMat1(1,3));
+   // desiredPts =
+    return ctr2ptVec;
+}
+
+void addPtsToImg(cv::Mat& img, std::vector<cv::Point2f> ptsToAdd, cv::Scalar color)
+{
+    for(int i = 0; i<ptsToAdd.size(); i++)
+    {
+        cv::circle(img, ptsToAdd[i], 1, color, -1 );
+        std::string display_string;
+        std::stringstream out;
+        out << i;
+        display_string = out.str();
+
+        //Add numbering to the four points discovered.
+        cv::putText( img, display_string, ptsToAdd[i], CV_FONT_HERSHEY_COMPLEX, 1,color, 1, 1);
+    }
+}// end disp_uv
 
 class ImageConverter
 {
@@ -33,6 +77,7 @@ class ImageConverter
     image_transport::Subscriber image_sub_;
     IBVS ibvs;
     bool correctDesiredPts;
+    ros::Time start, now;
     // Function declarations
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
@@ -44,21 +89,11 @@ public:
         // Subscrive to input video feed and publish output video feed
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
-
+        start = ros::Time::now();
         correctDesiredPts = true;
     }
 }; // End class
 
-int main(int argc, char** argv)
-{
-    std::cout << "now at the beginning of all";
-    ros::init(argc, argv, "image_converter");
-std::cout << "Ros inited";
-    ImageConverter ic;
-
-    ros::spin();
-    return 0;
-}
 
 void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
@@ -74,61 +109,37 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
 
-    Mat image;
+    cv::Mat image;
     image = cv_ptr->image;
-std::cout << "created image";
-    vector<Point2f> corners;
-    Size chessSize(CBOARD_COL,CBOARD_ROW);
-            namedWindow("Image2");
 
-    bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
-    if(patternfound)
-    {
-        Mat gray;
-        cvtColor(image,gray,CV_BGR2GRAY);
-        cornerSubPix(gray,corners,Size(11,11),Size(-1,-1),TermCriteria(CV_TERMCRIT_EPS+ CV_TERMCRIT_ITER,30,0.1));
+    now = ros::Time::now();
 
-       // 0 4 15 19...
-       std::vector<Point2f> fourCorners;
-       fourCorners.push_back(corners[0]);
-       fourCorners.push_back(corners[CBOARD_ROW]);
-       fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
-       fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
-       fourCorners.resize(4);
+    ros::Duration elaptime = now - start;
 
-       if(correctDesiredPts)
-       {
-           ibvs.rearrangeDesPts(fourCorners);
-       }
+    std::vector<cv::Point2f> fourCorners(4);
+    fourCorners =calc_desiredPts(cv::Point2f(300,150),50,20,8*elaptime.toSec());
 
-       ibvs.addPtsToImg(image,fourCorners);
-       ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
-       ibvs.update_uv(fourCorners);
-       ibvs.update_z_est(fourCorners);
-       ibvs.calculate_deltaS();
-       ibvs.update_Le();
-       ibvs.MP_psinv_Le();
-       std::cout << '\n' << "uv: ";
-//       ibvs.disp_uv();
-       ibvs.calculate_vc();
-//    ibvs.display_params();
-//           cout << corners << endl;
-       imshow("Image2",image);
-       cv::waitKey(3);
-    }
-    else
-    {
-        imshow("Image2",image);
-        correctDesiredPts = true;
-        cv::waitKey(3);
-    }
 
+    addPtsToImg(image,fourCorners,cv::Scalar(200,200,0));
+
+
+    cv::namedWindow("Timechanger");
+    cv::imshow("Timechanger", image);
+    cv::waitKey(3);
 }
 
 
 
+int main(int argc, char** argv)
+{
+    std::cout << "now at the beginning of all";
+    ros::init(argc, argv, "image_converter");
+std::cout << "Ros inited";
+    ImageConverter ic;
 
-
+    ros::spin();
+    return 0;
+}
 
 /*
 #include "Eigen/Dense"

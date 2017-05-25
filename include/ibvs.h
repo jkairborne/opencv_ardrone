@@ -17,6 +17,9 @@ class IBVS {
     //focal length is measured in pixels. bsln is in meters, and represents the line distance separating the two points in our z_est calculation
     double old_z_hat, z_est, focal_lngth, bsln;
     double Pinv_tolerance;
+    double angleDes;
+    int camWdth, camHght; // Just the height and width of the camera image
+    cv::Point2f imageCenter; // store the center point of the image plane.
     velocity vc;
     bool correctDesiredPts;
 
@@ -30,7 +33,7 @@ class IBVS {
     //void update_z_est();
   public:
     // Constructor:
-    IBVS(double baseline = 0.15, double focal_length = 700.00);
+    IBVS(double baseline = 0.15, double focal_length = 700.00, double camWidth = 640, double camHeight = 320);
 
     //Update functions
     void update_z_est(std::vector<cv::Point2f> pts);
@@ -39,6 +42,7 @@ class IBVS {
     void update_uv (std::vector<double> uv_new, bool updateDesired = false); //Overload for vector of doubles
     void update_tolerance(double newval);
     void update_desiredPts(std::vector<cv::Point2f> new_desPts);
+    void calc_desiredPts(cv::Point2f center, double offsetx, double offsety, double psi = 0);
     void update_Le_row(int, double);
     void update_Le(double);
     void manual_Le(std::vector<double> vecLe);
