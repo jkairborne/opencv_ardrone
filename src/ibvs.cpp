@@ -70,9 +70,7 @@ double IBVS::distance_calc(cv::Point2f pt1, cv::Point2f pt2)
 
 void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
 {
-    //std::cout << "IN REARRANGE DESPTS \n\n\n\n\n\n";
     int numpts = fourCorners.size();
-
     std::vector<cv::Point2f> desPt2f(4);
 
     desPt2f = uvToPoint2f(desiredPts);
@@ -81,44 +79,30 @@ void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
     double angleCurrent, angleDiff;
 
     angleCurrent = atan2((fourCorners[1].y - fourCorners[0].y),(fourCorners[1].x-fourCorners[0].x));
-    std::cout << angleCurrent << "\n";
 
-    std::cout << "\ndesired points in before rearrange call";
-    for(int i=0;i<8;i++) {std::cout << desiredPts[i] << " ";}
-
-
+//    for(int i=0;i<8;i++) {std::cout << desiredPts[i] << " ";}
 
 //Watch out, this goes increasing angles downwards.
     angleDiff = angleCurrent - angleDes;
 
     if(angleDiff >= 3*M_PI/4 || angleDiff < -3*M_PI/4)
     {
-       // desiredPts << 370,195,270,195,370,125,270,125;
         calc_desiredPts(50,35,M_PI);
-        std::cout << "\n\n\n In 1 \n\n\n";
-        //std::cout <<'\n' << desiredPts << '\n';
     }
     else if(angleDiff >= M_PI/4)
     {
-        std::cout << "value is between M_PI/4 and 3PI/4, rotating clockwise by 90 deg" << '\n';
-        std::cout << "\n\n\n In 2 \n\n\n";
         calc_desiredPts(50,35,M_PI/2);
-//                std::cout <<'\n' << desiredPts << '\n';
     }
     else if(angleDiff <= -M_PI/4)
     {
         calc_desiredPts(50,35,-M_PI/2);
-                std::cout  <<"\n\n\n In 3 \n\n\n";
-//                std::cout <<'\n' << desiredPts << '\n';
     }
     else
     {
-        std::cout << "no change" << '\n';
-                std::cout<<      "\n\n\n In 4 \n\n\n";
+        calc_desiredPts(50,35);
     }
-    std::cout << "\ndesired points after rearrange call";
-    for(int i=0;i<8;i++) {std::cout << desiredPts[i] << " ";}
-
+    // We only want this function to be called once to rearrange.
+    // It is set to true if the chessboard is lost from the image, back to false here.
 } // end rearrangeDesPts
 
 //This function is simply meant to help with the wraparound of the whole

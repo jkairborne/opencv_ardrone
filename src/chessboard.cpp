@@ -79,7 +79,7 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
     vector<Point2f> corners;
     Size chessSize(CBOARD_COL,CBOARD_ROW);
-            namedWindow("Image2");
+    namedWindow("Image2");
 
     bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
     if(patternfound)
@@ -99,22 +99,19 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
        if(correctDesiredPts)
        {
            ibvs.rearrangeDesPts(fourCorners);
+           correctDesiredPts = false;
        }
 
       // ibvs.calc_desiredPts(50,35);
        ibvs.addPtsToImg(image,fourCorners);
        ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
-       std::cout << ibvs.getDesPtsPt2F() << '\n';
        ibvs.update_uv(fourCorners);
        ibvs.update_z_est(fourCorners);
        ibvs.calculate_deltaS();
        ibvs.update_Le();
        ibvs.MP_psinv_Le();
-//       std::cout << '\n' << "uv: ";
-//       ibvs.disp_uv();
        ibvs.calculate_vc();
 //    ibvs.display_params();
-//           cout << corners << endl;
        imshow("Image2",image);
        cv::waitKey(3);
     }
