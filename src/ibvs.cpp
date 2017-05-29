@@ -82,120 +82,44 @@ void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
 
     angleCurrent = atan2((fourCorners[1].y - fourCorners[0].y),(fourCorners[1].x-fourCorners[0].x));
     std::cout << angleCurrent << "\n";
+
+    std::cout << "\ndesired points in before rearrange call";
+    for(int i=0;i<8;i++) {std::cout << desiredPts[i] << " ";}
+
+
+
 //Watch out, this goes increasing angles downwards.
     angleDiff = angleCurrent - angleDes;
 
     if(angleDiff >= 3*M_PI/4 || angleDiff < -3*M_PI/4)
     {
-        desiredPts << 370,195,270,195,370,125,270,125;
+       // desiredPts << 370,195,270,195,370,125,270,125;
+        calc_desiredPts(50,35,M_PI);
+        std::cout << "\n\n\n In 1 \n\n\n";
         //std::cout <<'\n' << desiredPts << '\n';
     }
     else if(angleDiff >= M_PI/4)
     {
         std::cout << "value is between M_PI/4 and 3PI/4, rotating clockwise by 90 deg" << '\n';
-        desiredPts << 370,195,270,125,370,125,270,195;
-                std::cout <<'\n' << desiredPts << '\n';
+        std::cout << "\n\n\n In 2 \n\n\n";
+        calc_desiredPts(50,35,M_PI/2);
+//                std::cout <<'\n' << desiredPts << '\n';
     }
     else if(angleDiff <= -M_PI/4)
     {
-        desiredPts << 370,125,370,195,270,125,270,195;
-                std::cout <<'\n' << desiredPts << '\n';
+        calc_desiredPts(50,35,-M_PI/2);
+                std::cout  <<"\n\n\n In 3 \n\n\n";
+//                std::cout <<'\n' << desiredPts << '\n';
     }
     else
     {
         std::cout << "no change" << '\n';
+                std::cout<<      "\n\n\n In 4 \n\n\n";
     }
+    std::cout << "\ndesired points after rearrange call";
+    for(int i=0;i<8;i++) {std::cout << desiredPts[i] << " ";}
 
-/*
-    // This is a vector of vectors (aka a matrix), 4x4 in most cases, and it will house the distance from each point to the other.
-    double rtn_vec[numpts][numpts];
-
-    std::cout << "\n rtn vec: \n";
-    for(int i=0; i<numpts;i++)
-    {
-        //We use -1 from the old vector size because the mean is included in old vector
-        for(int j = 0; j < numpts; j++)
-        {
-            // Calculate distance from each old vector (and the mean)
-            rtn_vec[i][j] = distance_calc(desPt2f[j],fourCorners[i]);
-            std::cout<< rtn_vec[i][j] << " ";
-  //1          std::cout << "desPt2f: " << desPt2f[j] << " fourCorners: " << fourCorners[i] << "rtn_vec: " << rtn_vec[i][j] << "\n";
-        }// end of internal nested for
-        std::cout << '\n';
-    } // end of external nested for
-
-    double sum_dist_vec[4] = {0,0,0,0};
-    int min_dist_ind = 0;
-
-
-
-
-    // We now have a 4x4 matrix populated by the distances to nearby points.
-    // We essentially want to select the lowest sum possible that still incorporates all distances.
-    // The code below calculates the various ways of shifting the rectangle
-    for (int i = 0; i<numpts; i++)
-    {
-        //This for loop basically adds up values along the diagonals of our matrix
-        for (int j = 0; j<numpts; j++)
-        {
-            int k = within_bounds(j+i,4);
-            sum_dist_vec[i] += rtn_vec[j][k];
-  //1          std::cout << "j/k" << j << "/" << k << "   sum_dist_vec[i] " << sum_dist_vec[i] << " rtn_vec[j][k]" << rtn_vec[j][k] <<'\n';
-        } // end inner for
-
-  //1     std::cout << "sum dist vec " << i << ":  " << sum_dist_vec[i] << '\n';
-
-        if (sum_dist_vec[i] < sum_dist_vec[min_dist_ind])
-        {
-            min_dist_ind = i;
-        } // end if
-    } // end outer for
-
-    std::cout << "input fourCorners : " <<\
-                 fourCorners[0] << "   " <<\
-                 fourCorners[1] << "   " <<\
-                 fourCorners[2] << "   " <<\
-                 fourCorners[3] << "   " <<
-                 std::endl;
-
-    std::cout << "old desiredPts : " <<\
-                 desiredPts[0] << "   " <<\
-                 desiredPts[1] << "   " <<\
-                 desiredPts[2] << "   " <<\
-                 desiredPts[3] << "   " <<\
-                 desiredPts[4] << "   " <<\
-                 desiredPts[5] << "   " <<\
-                 desiredPts[6] << "   " <<\
-                 desiredPts[7] <<\
-                 std::endl;
-
-    uv oldDesPts;
-    oldDesPts = desiredPts;
-
-    // We now have an offset number. Now offset the
-    for (int p = 0; p < desiredPts.rows(); p++)
-    {
-        //the 2*min_dist_ind is due to an 8 point shifting - see log from May 24th 2017
-        int new_index = within_bounds(p+2*min_dist_ind,desiredPts.rows());
-        desiredPts[new_index] = oldDesPts[p];
-     //   std::cout << "shifting with offset number " << min_dist_ind << "  new_index: " << new_index << '\n';
-     //   std::cout << "old des pt at that index: " << oldDesPts[p] << " new one: " << desiredPts[new_index] << '\n';
-    }
-
-
-    std::cout << "\nshift index: " << min_dist_ind << '\n';
-    std::cout << "new desiredPts : " <<\
-                 desiredPts[0] << "   " <<\
-                 desiredPts[1] << "   " <<\
-                 desiredPts[2] << "   " <<\
-                 desiredPts[3] << "   " <<\
-                 desiredPts[4] << "   " <<\
-                 desiredPts[5] << "   " <<\
-                 desiredPts[6] << "   " <<\
-                 desiredPts[7] <<\
-                 std::endl;
-*/
-} // end pvt_identify_pt
+} // end rearrangeDesPts
 
 //This function is simply meant to help with the wraparound of the whole
 int IBVS::within_bounds(int index, int totalind)
@@ -416,6 +340,7 @@ IBVS::IBVS(double baseline, double focal_length, double camWidth, double camHeig
     camHght = camHeight;
     imageCenter = cv::Point2f(camWdth/2,camHght/2);
     desiredPts << 270,125,370,125,270,195,370,195;
+    tstart = ros::Time::now();
 
     ImagePts << 1,2,3,4,5,6,7,8;
 
@@ -461,21 +386,43 @@ void IBVS::update_desiredPts(std::vector<cv::Point2f> new_desPts)
     }
 }
 
-void IBVS::calc_desiredPts(cv::Point2f center, double offsetx, double offsety, double psi)
+void IBVS::calc_desiredPts(double offsetx, double offsety, double psi, cv::Point2f center)
 {
-    Eigen::Matrix<double,2,4> vecMat;
-    Eigen::Rotation2D<double> rotMat(90);
-    //rotMat = Eigen::Rotation2D;
+    Eigen::Matrix<double,2,4> vecMat, rVecMat1;
+
+    Eigen::Matrix<double,2,2> rotMat;
+    if(center == cv::Point2f(-1,-1)) {center = imageCenter;}
+
+    rotMat(0,0) = cos(psi);
+    rotMat(1,1) = cos(psi);
+    rotMat(1,0) = sin(psi);
+    rotMat(0,1) = -sin(psi);
+
+
     vecMat << -offsetx,offsetx,-offsetx,offsetx,\
             -offsety,-offsety,offsety,offsety;
 
-    std::cout << "vecMat: \n" << vecMat << "\n";
-    std::vector<cv::Point2f> ctr2ptVec(4);
-    ctr2ptVec[0] = cv::Point2f(-offsetx,-offsety);
-    ctr2ptVec[1] = cv::Point2f(offsetx,-offsety);
-    ctr2ptVec[2] = cv::Point2f(-offsetx,offsety);
-    ctr2ptVec[3] = cv::Point2f(offsetx,offsety);
+    rVecMat1 = rotMat*vecMat;
+
+    std::vector<cv::Point2f> desPtNew(4);
+    desPtNew[0] = center+ cv::Point2f(rVecMat1(0,0),rVecMat1(1,0));
+    desPtNew[1] = center+ cv::Point2f(rVecMat1(0,1),rVecMat1(1,1));
+    desPtNew[2] = center+ cv::Point2f(rVecMat1(0,2),rVecMat1(1,2));
+    desPtNew[3] = center+ cv::Point2f(rVecMat1(0,3),rVecMat1(1,3));
    // desiredPts =
+    desiredPts << desPtNew[0].x, desPtNew[0].y , desPtNew[1].x, desPtNew[1].y,desPtNew[2].x, desPtNew[2].y,desPtNew[3].x, desPtNew[3].y;
+    //std::cout << "\n desiredPtNew: \n";
+/*    for(int i =0;i<4;i++)
+    {
+        desiredPts(2*i,0) = desPtNew[i].x;
+        desiredPts(2*i+1,0) = desPtNew[i].y;
+      //  std::cout << desPtNew[i].x << "  " << desPtNew[i].y << " ";
+    }
+*/
+    std::cout << "\ndesired points in rearrange call";
+    for(int i=0;i<8;i++) {std::cout << desiredPts[i] << " ";}
+
+
 }
 
 void IBVS::disp_uv_row(int n)

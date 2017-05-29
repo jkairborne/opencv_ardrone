@@ -101,8 +101,10 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
            ibvs.rearrangeDesPts(fourCorners);
        }
 
+      // ibvs.calc_desiredPts(50,35);
        ibvs.addPtsToImg(image,fourCorners);
        ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
+       std::cout << ibvs.getDesPtsPt2F() << '\n';
        ibvs.update_uv(fourCorners);
        ibvs.update_z_est(fourCorners);
        ibvs.calculate_deltaS();

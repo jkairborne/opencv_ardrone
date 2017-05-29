@@ -4,6 +4,7 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include <opencv2/highgui/highgui.hpp>
+#include "ros/time.h"
 
 typedef Eigen::Matrix<float, 8, 6> LeMat;
 typedef Eigen::Matrix<float, 6, 8> LePlus;
@@ -22,6 +23,7 @@ class IBVS {
     cv::Point2f imageCenter; // store the center point of the image plane.
     velocity vc;
     bool correctDesiredPts;
+    ros::Time tstart, tnow;
 
 
     //function declarations
@@ -42,7 +44,7 @@ class IBVS {
     void update_uv (std::vector<double> uv_new, bool updateDesired = false); //Overload for vector of doubles
     void update_tolerance(double newval);
     void update_desiredPts(std::vector<cv::Point2f> new_desPts);
-    void calc_desiredPts(cv::Point2f center, double offsetx, double offsety, double psi = 0);
+    void calc_desiredPts(double offsetx, double offsety, double psi = 0,cv::Point2f center = cv::Point2f(-1,-1));
     void update_Le_row(int, double);
     void update_Le(double);
     void manual_Le(std::vector<double> vecLe);
