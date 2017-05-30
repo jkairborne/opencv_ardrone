@@ -12,7 +12,7 @@ typedef Eigen::Matrix<float, 6, 8> LePlus;
 typedef Eigen::Matrix<float, 8, 1> uv;
 typedef Eigen::Matrix<float, 6, 1> velocity;
 
-class IBVS : private navdata_cb_ardrone {
+class IBVS {
     uv ImagePts, desiredPts, deltaS;
     LeMat Le;
     LePlus Le_psinv, DiagMat;

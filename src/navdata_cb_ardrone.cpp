@@ -17,7 +17,6 @@ navdata_cb_ardrone::navdata_cb_ardrone()
     navdata_sub_ = nh_.subscribe("/ardrone/navdata", 1, &navdata_cb_ardrone::callback, this);
 
     count =0;
-
 }
 
 void navdata_cb_ardrone::callback(const ardrone_autonomy::Navdata& msg)
@@ -28,8 +27,9 @@ void navdata_cb_ardrone::callback(const ardrone_autonomy::Navdata& msg)
     yaw = msg.rotZ*M_PI/180;
 
     std::cout << "callback roll, pitch, yaw: " << roll << '\t' << pitch << '\t' << yaw << '\n';
-
-    get_rpy();
+    std::vector<double> abc;
+    abc.resize(3);
+    abc = get_rpy();
     //getRotM();
 }
 
@@ -56,6 +56,7 @@ std::vector<double> navdata_cb_ardrone::get_rpy()
 
 
     std::cout << "\n\ngetrpy: " << roll << " " << pitch << " " << yaw<< " " << count << "\n";
+    output.resize(3);
     return output;
 }
 
