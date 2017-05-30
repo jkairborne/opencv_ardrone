@@ -17,16 +17,11 @@ velocity IBVS::calculate_vc()
 
 void IBVS::calculate_deltaS()
 {
-
     deltaS = ImagePts - desiredPts;
+//std::cout << "Just before navdata get rpy\n";//32
 
-/*    std::cout << "deltaS:  ";
-    for (int i = 0; i<deltaS.rows();i++)
-    {
-        std::cout << deltaS[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
-*/
+    navdata.get_rpy();
+//std::cout << "Just after navdata get rpy\n";//32
 }
 
 void IBVS::display_params()
@@ -142,14 +137,50 @@ std::vector<cv::Point2f> IBVS::uvToPoint2f(uv input)
 
 uv IBVS::point2fToUv(std::vector<cv::Point2f> input)
 {
-    int ptnum = input.size();
     uv output;
 
-    for(int i = 0; i<ptnum;i++)
+    for(int i = 0; i<input.size();i++)
     {
         output(2*i,0) = input[i].x;
         output(2*i+1,0) = input[i].y;
     }
+
+    return output;
+}
+
+std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input)
+{
+    Eigen::Matrix3d rotM;
+    rotM = navdata.getRotM();
+    navdata.get_rpy();
+    std::vector<cv::Point2f> output;
+    
+    // Here need to hope that z_est has been recently updated;
+
+    for(int i = 0 ; i< input.size(); i++ )
+    {
+        Eigen::Vector3d realCoords, virtCoords;
+        realCoords(2,0) = z_est;
+        realCoords(0,0) = realCoords(2,0) * input[i].x;
+        realCoords(1,0) = realCoords(2,0) * input[i].y;
+
+        virtCoords = rotM * realCoords;
+        
+        cv::Point2f temp;
+        temp.x = virtCoords(0,0)/virtCoords(2,0);
+        temp.y = virtCoords(1,0)/virtCoords(2,0);
+
+        output.push_back(temp);
+
+    }
+
+/*
+    std::cout<< "\n input points:\n ";
+    for(int j =0; j<input.size();j++){std::cout << input[j].x << "  " << input[j].y << "       ";}
+        std::cout<< "\n output points:\n ";
+    for(int j =0; j<input.size();j++){std::cout << output[j].x << "  " << output[j].y << "      ";}
+    std::cout << "z_est: " << z_est << '\n' << "rotM:\n" << rotM << "\n\n";
+*/
 
     return output;
 }
@@ -325,6 +356,8 @@ IBVS::IBVS(double baseline, double focal_length, double camWidth, double camHeig
     imageCenter = cv::Point2f(camWdth/2,camHght/2);
     desiredPts << 270,125,370,125,270,195,370,195;
     tstart = ros::Time::now();
+
+  //  navdata = navdata_cb_ardrone();
 
     ImagePts << 1,2,3,4,5,6,7,8;
 

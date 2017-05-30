@@ -5,13 +5,14 @@
 #include <Eigen/Dense>
 #include <opencv2/highgui/highgui.hpp>
 #include "ros/time.h"
+#include "navdata_cb_ardrone.h"
 
 typedef Eigen::Matrix<float, 8, 6> LeMat;
 typedef Eigen::Matrix<float, 6, 8> LePlus;
 typedef Eigen::Matrix<float, 8, 1> uv;
 typedef Eigen::Matrix<float, 6, 1> velocity;
 
-class IBVS {
+class IBVS : private navdata_cb_ardrone {
     uv ImagePts, desiredPts, deltaS;
     LeMat Le;
     LePlus Le_psinv, DiagMat;
@@ -24,6 +25,7 @@ class IBVS {
     velocity vc;
     bool correctDesiredPts;
     ros::Time tstart, tnow;
+    navdata_cb_ardrone navdata;
 
 
     //function declarations
@@ -54,6 +56,7 @@ class IBVS {
     void MP_psinv_Le();
     velocity calculate_vc();
     void calculate_deltaS();
+    std::vector<cv::Point2f> virtCam(std::vector<cv::Point2f> input);
 
     //display functions
     void display_Le();

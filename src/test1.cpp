@@ -20,114 +20,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
-
-#define PI 3.14159265
-
-std::vector<cv::Point2f> calc_desiredPts(cv::Point2f center, double offsetx, double offsety, double psi)
-{
-    Eigen::Matrix<double,2,4> vecMat, rVecMat1;
-
-    Eigen::Matrix<double,2,2> rotMat;
-
-    rotMat(0,0) = cos(psi*PI/180);
-    rotMat(1,1) = cos(psi*PI/180);
-    rotMat(1,0) = sin(psi*PI/180);
-    rotMat(0,1) = -sin(psi*PI/180);
-
-    vecMat << -offsetx,offsetx,-offsetx,offsetx,\
-            -offsety,-offsety,offsety,offsety;
-
-rVecMat1 = rotMat*vecMat;
-
-
-//    std::cout << "RotationMatrix: \n" << rotMat << "\n";
-    std::cout << "vecMat: \n" << vecMat << "\n";
-    std::cout << "vecMat1: \n" << rVecMat1 << "\n";
-
-
-
-    std::vector<cv::Point2f> ctr2ptVec(4);
-    ctr2ptVec[0] = center+ cv::Point2f(rVecMat1(0,0),rVecMat1(1,0));
-    ctr2ptVec[1] = center+ cv::Point2f(rVecMat1(0,1),rVecMat1(1,1));
-    ctr2ptVec[2] = center+ cv::Point2f(rVecMat1(0,2),rVecMat1(1,2));
-    ctr2ptVec[3] = center+ cv::Point2f(rVecMat1(0,3),rVecMat1(1,3));
-   // desiredPts =
-    return ctr2ptVec;
-}
-
-void addPtsToImg(cv::Mat& img, std::vector<cv::Point2f> ptsToAdd, cv::Scalar color)
-{
-    for(int i = 0; i<ptsToAdd.size(); i++)
-    {
-        cv::circle(img, ptsToAdd[i], 1, color, -1 );
-        std::string display_string;
-        std::stringstream out;
-        out << i;
-        display_string = out.str();
-
-        //Add numbering to the four points discovered.
-        cv::putText( img, display_string, ptsToAdd[i], CV_FONT_HERSHEY_COMPLEX, 1,color, 1, 1);
-    }
-}// end disp_uv
-
-class ImageConverter
-{
-    ros::NodeHandle nh_;
-    image_transport::ImageTransport it_;
-    image_transport::Subscriber image_sub_;
-    IBVS ibvs;
-    bool correctDesiredPts;
-    ros::Time start, now;
-    // Function declarations
-    void imageCb(const sensor_msgs::ImageConstPtr& msg);
-
-public:
-    ImageConverter()
-        : it_(nh_)
-    {
-        ibvs = IBVS();
-        // Subscrive to input video feed and publish output video feed
-        image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
-           &ImageConverter::imageCb, this);
-        start = ros::Time::now();
-        correctDesiredPts = true;
-    }
-}; // End class
-
-
-void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
-{
-
-    cv_bridge::CvImagePtr cv_ptr;
-    try
-    {
-        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    }
-    catch (cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-        return;
-    }
-
-    cv::Mat image;
-    image = cv_ptr->image;
-
-    now = ros::Time::now();
-
-    ros::Duration elaptime = now - start;
-
-    std::vector<cv::Point2f> fourCorners(4);
-    fourCorners =calc_desiredPts(cv::Point2f(300,150),50,20,8*elaptime.toSec());
-
-
-    addPtsToImg(image,fourCorners,cv::Scalar(200,200,0));
-
-
-    cv::namedWindow("Timechanger");
-    cv::imshow("Timechanger", image);
-    cv::waitKey(3);
-}
-
+#include "navdata_cb_ardrone.h"
 
 
 int main(int argc, char** argv)
@@ -135,7 +28,7 @@ int main(int argc, char** argv)
     std::cout << "now at the beginning of all";
     ros::init(argc, argv, "image_converter");
 std::cout << "Ros inited";
-    ImageConverter ic;
+    navdata_cb_ardrone ic;
 
     ros::spin();
     return 0;

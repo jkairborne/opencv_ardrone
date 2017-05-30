@@ -106,8 +106,12 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
        ibvs.addPtsToImg(image,fourCorners);
        ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
        ibvs.update_uv(fourCorners);
+
        ibvs.update_z_est(fourCorners);
+       ibvs.virtCam(fourCorners);
+
        ibvs.calculate_deltaS();
+
        ibvs.update_Le();
        ibvs.MP_psinv_Le();
        ibvs.calculate_vc();

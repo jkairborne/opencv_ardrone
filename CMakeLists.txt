@@ -184,6 +184,7 @@ target_link_libraries(chessboard ${catkin_LIBRARIES})
 add_executable(test2 src/test2.cpp ${HEADER_SOURCES})
 target_link_libraries(test2 ${catkin_LIBRARIES})
 
+
 #add_executable(momentfinder src/momentfinder.cpp)
 #target_link_libraries(momentfinder ${catkin_LIBRARIES})
 
