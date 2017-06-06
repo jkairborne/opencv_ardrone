@@ -26,6 +26,7 @@ class IBVS {
     bool correctDesiredPts;
     ros::Time tstart, tnow;
     navdata_cb_ardrone navdata;
+   // std::string topicName;
 
 
     //function declarations
@@ -37,7 +38,7 @@ class IBVS {
     //void update_z_est();
   public:
     // Constructor:
-    IBVS(double baseline = 0.15, double focal_length = 700.00, double camWidth = 640, double camHeight = 320);
+    IBVS(const std::string &navdataTopic = "/ardrone/navdata", double baseline = 0.15, double focal_length = 700.00, double camWidth = 640, double camHeight = 320);
 
     //Update functions
     void update_z_est(std::vector<cv::Point2f> pts);
@@ -56,7 +57,7 @@ class IBVS {
     void MP_psinv_Le();
     velocity calculate_vc();
     void calculate_deltaS();
-    std::vector<cv::Point2f> virtCam(std::vector<cv::Point2f> input);
+    std::vector<cv::Point2f> virtCam(std::vector<cv::Point2f> input, Eigen::Matrix3d rotatM);
 
     //display functions
     void display_Le();

@@ -21,7 +21,7 @@ class navdata_cb_ardrone
     // Function declarations
     void callback(const ardrone_autonomy::Navdata& msg);    
 public:
-    navdata_cb_ardrone();
+    navdata_cb_ardrone(const std::string &topicToSubscribe = "/ardrone/navdata");
     std::vector<double> get_rpy();
     Eigen::Matrix3d getRotM();
 

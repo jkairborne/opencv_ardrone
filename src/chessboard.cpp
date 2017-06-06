@@ -19,6 +19,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
 #include <algorithm>
+#include "navdata_cb_ardrone.h"
 
 static const int CBOARD_COL = 5;
 static const int CBOARD_ROW = 4;
@@ -32,15 +33,16 @@ class ImageConverter
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
     IBVS ibvs;
+    navdata_cb_ardrone navdataCb;
     bool correctDesiredPts;
     // Function declarations
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
 public:
-    ImageConverter()
+    ImageConverter(const std::string &navdataCbTopic = "/ardrone/navdata")
         : it_(nh_)
     {
-        ibvs = IBVS();
+        ibvs = IBVS(navdataCbTopic);
         // Subscrive to input video feed and publish output video feed
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
@@ -55,6 +57,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "image_converter");
 std::cout << "Ros inited";
     ImageConverter ic;
+  //  ImageConverter ic2 = ImageConverter("/chatter");
 
     ros::spin();
     return 0;
@@ -108,7 +111,7 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
        ibvs.update_uv(fourCorners);
 
        ibvs.update_z_est(fourCorners);
-       ibvs.virtCam(fourCorners);
+       ibvs.addPtsToImg(image,ibvs.virtCam(fourCorners,navdataCb.getRotM()),cv::Scalar(150,150,0));
 
        ibvs.calculate_deltaS();
 

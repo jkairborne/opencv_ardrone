@@ -1,3 +1,44 @@
+#include "ros/ros.h"
+#include "ardrone_autonomy/Navdata.h"
+#include <cmath>
+
+#include <sstream>
+
+int main(int argc, char **argv)
+{
+
+  ros::init(argc, argv, "talker");
+
+  ros::NodeHandle n;
+
+  ros::Publisher chatter_pub = n.advertise<ardrone_autonomy::Navdata>("chatter", 1000);
+
+  ros::Rate loop_rate(2);
+
+
+  int count = 0;
+  while (ros::ok())
+  {
+    ardrone_autonomy::Navdata msg;
+
+    msg.rotX = 15;
+    msg.rotY = 15*cos(count/10.0);
+    msg.rotZ = 45;
+
+    chatter_pub.publish(msg);
+
+    ros::spinOnce();
+
+    loop_rate.sleep();
+    ++count;
+  }
+
+
+  return 0;
+}
+
+
+/*
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -20,3 +61,4 @@ int main(int argc, char** argv)
     loop_rate.sleep();
   }
 }
+*/

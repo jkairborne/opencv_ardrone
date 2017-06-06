@@ -148,41 +148,47 @@ uv IBVS::point2fToUv(std::vector<cv::Point2f> input)
     return output;
 }
 
-std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input)
+std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input, Eigen::Matrix3d rotatM)
 {
-    Eigen::Matrix3d rotM;
-    rotM = navdata.getRotM();
-    navdata.get_rpy();
-    std::vector<cv::Point2f> output;
+    std::vector<cv::Point2f> outputs;
     
+    double z_virt;
     // Here need to hope that z_est has been recently updated;
+
+    //std::cout << "\n" << topicName << "\n";
 
     for(int i = 0 ; i< input.size(); i++ )
     {
+        cv::Point2f fromCenter = input[i] - imageCenter;
         Eigen::Vector3d realCoords, virtCoords;
         realCoords(2,0) = z_est;
-        realCoords(0,0) = realCoords(2,0) * input[i].x;
-        realCoords(1,0) = realCoords(2,0) * input[i].y;
+        realCoords(0,0) = z_est * fromCenter.x/focal_lngth;
+        realCoords(1,0) = z_est * fromCenter.y/focal_lngth;
 
-        virtCoords = rotM * realCoords;
+        virtCoords = rotatM * realCoords;
         
         cv::Point2f temp;
-        temp.x = virtCoords(0,0)/virtCoords(2,0);
-        temp.y = virtCoords(1,0)/virtCoords(2,0);
+        z_virt = virtCoords(2,0);
+        temp.x = virtCoords(0,0)*focal_lngth/virtCoords(2,0);
+        temp.y = virtCoords(1,0)*focal_lngth/virtCoords(2,0);
 
-        output.push_back(temp);
+        outputs.push_back(temp+imageCenter);
 
+        std::cout << "orig coords:  " << input[i].x << " " << input[i].y << ", corrected for focal lngth etc: " << realCoords(0,0) << " " << realCoords(1,0) << " virtCoords " << virtCoords(0,0) << " " << virtCoords(1,0) << "\n";
+        std::cout << "corrections applied: " << temp.x << " " << temp.y << " Image Center: " << imageCenter.x << " " << imageCenter.y << "\n";
     }
 
+//   std::cout << "roll, pitch: " << acos(rotatM(1,1)) << acos(rotatM(0,0)) << '\n';
 /*
     std::cout<< "\n input points:\n ";
     for(int j =0; j<input.size();j++){std::cout << input[j].x << "  " << input[j].y << "       ";}
         std::cout<< "\n output points:\n ";
-    for(int j =0; j<input.size();j++){std::cout << output[j].x << "  " << output[j].y << "      ";}
-    std::cout << "z_est: " << z_est << '\n' << "rotM:\n" << rotM << "\n\n";
+    for(int j =0; j<input.size();j++){std::cout << outputs[j].x << "  " << outputs[j].y << "      ";}
 */
+    std::cout << "\nroll, pitch: " << 180*acos(rotatM(1,1))/M_PI << "  " << 180*acos(rotatM(0,0))/M_PI << "z_est: " << z_est << "z_virt: " << z_virt << '\n';
 
-    return output;
+
+    return outputs;
 }
 
 void IBVS::update_z_est(std::vector<cv::Point2f> pts)
@@ -344,7 +350,7 @@ void IBVS::update_uv_row (int update_pair, double new_u, double new_v, bool upda
 }
 
 
-IBVS::IBVS(double baseline, double focal_length, double camWidth, double camHeight)
+IBVS::IBVS(const std::string &navdataTopic, double baseline, double focal_length, double camWidth, double camHeight)
 {
     Pinv_tolerance = 0.1;
     correctDesiredPts = true;
@@ -356,6 +362,8 @@ IBVS::IBVS(double baseline, double focal_length, double camWidth, double camHeig
     imageCenter = cv::Point2f(camWdth/2,camHght/2);
     desiredPts << 270,125,370,125,270,195,370,195;
     tstart = ros::Time::now();
+    navdata = navdata_cb_ardrone(navdataTopic);
+  //  topicName = navdataTopic;
 
   //  navdata = navdata_cb_ardrone();
 
@@ -460,13 +468,27 @@ void IBVS::addPtsToImg(cv::Mat& img, std::vector<cv::Point2f> ptsToAdd, cv::Scal
 {
     for(int i = 0; i<ptsToAdd.size(); i++)
     {
-        cv::circle(img, ptsToAdd[i], 1, color, -1 );
-        std::string display_string;
-        std::stringstream out;
-        out << i;
-        display_string = out.str();
+        if(ptsToAdd[i].x <0 || ptsToAdd[i].x > camWdth || ptsToAdd[i].y < 0 || ptsToAdd[i].y > camHght)
+        {
+           // std::cout << "A point to be added to the image was out of range";
+            std::string display_string;
+            std::stringstream out;
+            out << "point out of image";
+            display_string = out.str();
 
-        //Add numbering to the four points discovered.
-        cv::putText( img, display_string, ptsToAdd[i], CV_FONT_HERSHEY_COMPLEX, 1,color, 1, 1);
-    }
+            //Add numbering to the four points discovered.
+            cv::putText( img, display_string, cv::Point2f(10,10), CV_FONT_HERSHEY_COMPLEX, 1,color, 1, 1);
+        }
+        else
+        {
+            cv::circle(img, ptsToAdd[i], 1, color, -1 );
+            std::string display_string;
+            std::stringstream out;
+            out << i;
+            display_string = out.str();
+
+            //Add numbering to the four points discovered.
+            cv::putText( img, display_string, ptsToAdd[i], CV_FONT_HERSHEY_COMPLEX, 1,color, 1, 1);
+        } // end else
+    }// end for
 }// end addPtsToImg
