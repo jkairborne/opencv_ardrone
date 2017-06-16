@@ -21,9 +21,9 @@ int main(int argc, char **argv)
   {
     ardrone_autonomy::Navdata msg;
 
-    msg.rotX = 15;
+    msg.rotX = 0;
     msg.rotY = 15*cos(count/10.0);
-    msg.rotZ = 45;
+    msg.rotZ = 0;
 
     chatter_pub.publish(msg);
 

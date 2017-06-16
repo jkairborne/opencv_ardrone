@@ -42,7 +42,7 @@ public:
     ImageConverter(const std::string &navdataCbTopic = "/ardrone/navdata")
         : it_(nh_)
     {
-        ibvs = IBVS(navdataCbTopic);
+        ibvs = IBVS();
         // Subscrive to input video feed and publish output video feed
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
@@ -110,8 +110,16 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
        ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
        ibvs.update_uv(fourCorners);
 
+
+       //ibvs.update_z_est(0.5);
        ibvs.update_z_est(fourCorners);
+
        ibvs.addPtsToImg(image,ibvs.virtCam(fourCorners,navdataCb.getRotM()),cv::Scalar(150,150,0));
+  //     std::vector<cv::Point2f> tstg;
+  //     tstg.push_back(cv::Point2f(500,200));
+  //     tstg.resize(1);
+  //     ibvs.virtCam(tstg,navdataCb.getRotM());
+  //     ibvs.addPtsToImg(image,tstg,cv::Scalar(150,150,0));
 
        ibvs.calculate_deltaS();
 

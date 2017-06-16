@@ -155,29 +155,43 @@ std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input, Eigen::Ma
     double z_virt;
     // Here need to hope that z_est has been recently updated;
 
-    //std::cout << "\n" << topicName << "\n";
+    std::cout << "\nInput/output coordinate pairs\n";
 
     for(int i = 0 ; i< input.size(); i++ )
     {
         cv::Point2f fromCenter = input[i] - imageCenter;
         Eigen::Vector3d realCoords, virtCoords;
         realCoords(2,0) = z_est;
-        realCoords(0,0) = z_est * fromCenter.x/focal_lngth;
         realCoords(1,0) = z_est * fromCenter.y/focal_lngth;
+        realCoords(0,0) = z_est * fromCenter.x/focal_lngth;
 
         virtCoords = rotatM * realCoords;
         
         cv::Point2f temp;
         z_virt = virtCoords(2,0);
-        temp.x = virtCoords(0,0)*focal_lngth/virtCoords(2,0);
+
         temp.y = virtCoords(1,0)*focal_lngth/virtCoords(2,0);
+        temp.x = virtCoords(0,0)*focal_lngth/virtCoords(2,0);
 
-        outputs.push_back(temp+imageCenter);
 
-        std::cout << "orig coords:  " << input[i].x << " " << input[i].y << ", corrected for focal lngth etc: " << realCoords(0,0) << " " << realCoords(1,0) << " virtCoords " << virtCoords(0,0) << " " << virtCoords(1,0) << "\n";
+//        outputs.push_back(cv::Point2f(temp.x+imageCenter.y,temp.y+imageCenter.x));
+        outputs.push_back(cv::Point2f(temp+imageCenter));
+
+
+/*        std::cout << " Original image coords x/y : " << input[i].x << "/" << input[i].y << " output image coords x/y : " << temp+imageCenter << '\n';
+        std::cout << "original coords x/y: " << realCoords(0,0) << "/" << realCoords(1,0) << "/" << realCoords(2,0) << " virt coords x/y: " << virtCoords(0,0) << "/" << virtCoords(1,0) << "/" <<  virtCoords(2,0) << "\n";
+        std::cout << "temp.x/temp.y: " << temp.x << "/" << temp.y << "      imageCenter.x/imageCenter.y: " << imageCenter.x << "/" << imageCenter.y << "\n\n";
+*/
+//  std::cout << "temp: " << temp << "Temp plus image center: " << (temp+imageCenter) << "\n\n";
+
+/*        std::cout << "orig coords:  " << input[i].x << " " << input[i].y << ", distance from camera in x and y: " << realCoords(0,0) << " " << realCoords(1,0) << " distance from virtual camera " << virtCoords(0,0) << " " << virtCoords(1,0) << "\n";
         std::cout << "corrections applied: " << temp.x << " " << temp.y << " Image Center: " << imageCenter.x << " " << imageCenter.y << "\n";
+        std::cout << "temp.x: " << temp.x << "  temp.y : " << temp.y << "\n" << " output x: " << outputs[0].x << "  output y: " << outputs[0].y << "\n\n";
+*/
+        std::cout << input[i] << "\t" << temp+imageCenter << '\n';
     }
-
+    std::cout << "\nroll, pitch: " << 180*atan2(rotatM(1,2),rotatM(1,1))/M_PI << "  " << 180*atan2(rotatM(2,0),rotatM(0,0))/M_PI << "\tz_est: " << z_est << "z_virt: " << z_virt << '\n';
+        std::cout <<" rotatM: \n"<<  rotatM << "\n";
 //   std::cout << "roll, pitch: " << acos(rotatM(1,1)) << acos(rotatM(0,0)) << '\n';
 /*
     std::cout<< "\n input points:\n ";
@@ -185,8 +199,6 @@ std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input, Eigen::Ma
         std::cout<< "\n output points:\n ";
     for(int j =0; j<input.size();j++){std::cout << outputs[j].x << "  " << outputs[j].y << "      ";}
 */
-    std::cout << "\nroll, pitch: " << 180*acos(rotatM(1,1))/M_PI << "  " << 180*acos(rotatM(0,0))/M_PI << "z_est: " << z_est << "z_virt: " << z_virt << '\n';
-
 
     return outputs;
 }
@@ -201,7 +213,12 @@ void IBVS::update_z_est(std::vector<cv::Point2f> pts)
     avg_dist = 0.5*(dist1+dist2);
 
     z_est = bsln*focal_lngth/avg_dist;
-//    std::cout << '\n' << z_est << "\n";
+    //    std::cout << '\n' << z_est << "\n";
+}
+
+void IBVS::update_z_est(double newEst)
+{
+    z_est = newEst;
 }
 
 
@@ -350,7 +367,7 @@ void IBVS::update_uv_row (int update_pair, double new_u, double new_v, bool upda
 }
 
 
-IBVS::IBVS(const std::string &navdataTopic, double baseline, double focal_length, double camWidth, double camHeight)
+IBVS::IBVS(double baseline, double focal_length, double camWidth, double camHeight)
 {
     Pinv_tolerance = 0.1;
     correctDesiredPts = true;
@@ -362,8 +379,6 @@ IBVS::IBVS(const std::string &navdataTopic, double baseline, double focal_length
     imageCenter = cv::Point2f(camWdth/2,camHght/2);
     desiredPts << 270,125,370,125,270,195,370,195;
     tstart = ros::Time::now();
-    navdata = navdata_cb_ardrone(navdataTopic);
-  //  topicName = navdataTopic;
 
   //  navdata = navdata_cb_ardrone();
 

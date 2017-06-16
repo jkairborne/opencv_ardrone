@@ -26,7 +26,7 @@ class IBVS {
     bool correctDesiredPts;
     ros::Time tstart, tnow;
     navdata_cb_ardrone navdata;
-   // std::string topicName;
+
 
 
     //function declarations
@@ -38,10 +38,11 @@ class IBVS {
     //void update_z_est();
   public:
     // Constructor:
-    IBVS(const std::string &navdataTopic = "/ardrone/navdata", double baseline = 0.15, double focal_length = 700.00, double camWidth = 640, double camHeight = 320);
+    IBVS(double baseline = 0.15, double focal_length = 700.00, double camWidth = 640, double camHeight = 360);
 
     //Update functions
     void update_z_est(std::vector<cv::Point2f> pts);
+    void update_z_est(double newEst);
     void update_uv_row (int update_pair, double new_u, double new_v, bool updateDesired = false);
     void update_uv (std::vector<cv::Point2f> uv_new, bool updateDesired = false);
     void update_uv (std::vector<double> uv_new, bool updateDesired = false); //Overload for vector of doubles
