@@ -1,3 +1,99 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstring> // memcpy
+#include <cstdlib>
+
+int compute_checksum(unsigned char *data, int length)
+/* data does not include the checksum byte. length is the checksum length
+ */
+{
+    int sum = 0;
+    int checksum;
+    for (int i = 0; i < length; i++)
+    {
+        sum += data[i];
+    }
+    sum = sum & 0xFF;
+    checksum = 0xFF - sum;
+    return checksum;
+}
+
+
+/*
+unsigned int crc16_update(unsigned int crc, char a)
+{
+	int i;
+	crc ^= a;
+	for (i = 0; i < 8; ++i)
+	{
+		if ((crc & 1) != 0)
+			crc = (crc >> 1) ^ 0xA001;
+		else
+			crc = (crc >> 1);
+	}
+	return crc;
+}
+
+unsigned int calcCRC16(unsigned char *serno, int length)
+{
+		unsigned int crc = 0;
+	unsigned int i;
+
+	unsigned char temp[31] = {0};
+	memcpy(temp, &serno[0], length);
+
+	for (i = 0; i < 31; i++)
+		crc = crc16_update(crc, temp[i]);
+
+	return crc; // must be 0
+}
+
+unsigned int checksum(unsigned char *data, int length)
+{
+	unsigned int sum = calcCRC16(data, length);
+	return sum;
+}
+*/
+
+int main()
+{
+	printf("start of function");
+	
+//	unsigned char arr[10] = {80,73,72,71,70,69,68,67,66,65};	
+unsigned char arr[5];
+arr[0] = 0x58;
+arr[1] = 0x00;
+arr[2] = 0x01;
+arr[3] = 0x01;
+arr[4] = 0x03;
+int result;
+	result = compute_checksum(arr,5);
+	printf("\nchecksum value for 5 is: %d", result);  //MY ISSUE IS THAT WE GET TO 162 because of the 88. Need to change that!
+
+/*
+	unsigned char arr[10] = {65,66,67,68,69,70,71,72,73,80};	
+
+	for(int i=0;i<10;i++)
+	{
+		printf("%c ",arr[i]);
+	}
+	
+	int result;
+	result = compute_checksum(arr,10);
+	printf("\nchecksum value for all 10 is: %d", result);
+
+	result = compute_checksum(arr,7);
+	printf("\nchecksum value for 7 is: %d", result);
+	result = compute_checksum(arr,5);
+	printf("\nchecksum value for 5 is: %d", result);
+	result = compute_checksum(arr,3);
+	printf("\nchecksum value for 3 is: %d", result);
+*/
+	
+	return 0;
+}
+
+
 /*
 #include <opencv2/core/utility.hpp>
 #include "opencv2/video/tracking.hpp"
@@ -5,7 +101,7 @@
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/videoio.hpp"
 #include "opencv2/highgui.hpp"
-*/
+
 #include <iostream>
 #include <ctype.h>
 #include "ibvs.h"
@@ -33,7 +129,7 @@ std::cout << "Ros inited";
     ros::spin();
     return 0;
 }
-
+*/
 /*
 #include "Eigen/Dense"
 #include <iostream>
