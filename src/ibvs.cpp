@@ -6,13 +6,20 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cmath>
+#include "geometry_msgs/Twist.h"
 
-velocity IBVS::calculate_vc()
+geometry_msgs::Twist IBVS::calculate_vc()
 {
+    geometry_msgs::Twist vcRet;
     vc = Le_psinv * deltaS;
     std::cout << " velocity is: " << vc(0,0) << " " << vc(1,0) << " " << vc(2,0) << " " << vc(3,0) << " " << vc(4,0) << " " << vc(5,0) << '\n';
-
-    return vc;
+    vcRet.linear.x = vc(0,0);
+    vcRet.linear.y = vc(1,0);
+    vcRet.linear.z = vc(2,0);
+    vcRet.angular.x = 0.1;
+    vcRet.angular.y = 0;
+    vcRet.angular.z = vc(5,0);
+    return vcRet;
 }
 
 void IBVS::calculate_deltaS()

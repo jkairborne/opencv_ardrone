@@ -20,6 +20,7 @@
 #include <vector>
 #include <algorithm>
 #include "navdata_cb_ardrone.h"
+#include "geometry_msgs/Twist.h"
 
 static const int CBOARD_COL = 5;
 static const int CBOARD_ROW = 4;
@@ -30,12 +31,15 @@ using namespace cv;
 class ImageConverter
 {
     ros::NodeHandle nh_;
+    ros::Publisher pub_;
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
     IBVS ibvs;
     navdata_cb_ardrone navdataCb;
     bool correctDesiredPts;
     Mat storedImage;
+    geometry_msgs::Twist cmdToSend;
+    int scalingLat, scalingVert, scalingPsi;
     // Function declarations
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
     void processImage(Mat &image);
@@ -48,6 +52,10 @@ public:
         // Subscrive to input video feed and publish output video feed
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
+        pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_ibvs", 10);
+        scalingLat = 500;
+        scalingVert = 1;
+        scalingPsi = 1;
     }
 }; // End class
 
@@ -106,8 +114,18 @@ void ImageConverter::processImage(Mat &image)
 
         ibvs.update_Le();
         ibvs.MP_psinv_Le();
-        ibvs.calculate_vc();
-        //    ibvs.display_params();
+        cmdToSend = ibvs.calculate_vc();
+
+        // Manipulate and send the command:
+        cmdToSend.linear.x = cmdToSend.linear.x /scalingLat;
+        cmdToSend.linear.y = cmdToSend.linear.y /scalingLat;
+        cmdToSend.linear.z = cmdToSend.linear.z /scalingVert;
+        cmdToSend.angular.x = 0.1;
+        cmdToSend.angular.y = 0;
+        cmdToSend.angular.z = cmdToSend.angular.z/scalingPsi;
+
+        pub_.publish(cmdToSend);
+
         imshow("Image2",image);
         cv::waitKey(3);
     }

@@ -14,8 +14,8 @@ navdata_cb_ardrone::navdata_cb_ardrone()
 {
     std::cout << "in the constructor:";
     // Subscrive to input video feed and publish output video feed
-   // navdata_sub_ = nh_.subscribe("/ardrone/navdata", 1, &navdata_cb_ardrone::callback, this);
-    navdata_sub_ = nh_.subscribe("/chatter", 1, &navdata_cb_ardrone::callback, this);
+    navdata_sub_ = nh_.subscribe("/ardrone/navdata", 1, &navdata_cb_ardrone::callback, this);
+    //navdata_sub_ = nh_.subscribe("/chatter", 1, &navdata_cb_ardrone::callback, this);
 
 
     count =0;

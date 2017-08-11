@@ -6,6 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "ros/time.h"
 #include "navdata_cb_ardrone.h"
+#include "geometry_msgs/Twist.h"
 
 typedef Eigen::Matrix<float, 8, 6> LeMat;
 typedef Eigen::Matrix<float, 6, 8> LePlus;
@@ -56,7 +57,7 @@ class IBVS {
 
     // calculate functions
     void MP_psinv_Le();
-    velocity calculate_vc();
+    geometry_msgs::Twist calculate_vc();
     void calculate_deltaS();
     std::vector<cv::Point2f> virtCam(std::vector<cv::Point2f> input, Eigen::Matrix3d rotatM);
 
