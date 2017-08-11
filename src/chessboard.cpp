@@ -35,19 +35,19 @@ class ImageConverter
     IBVS ibvs;
     navdata_cb_ardrone navdataCb;
     bool correctDesiredPts;
+    Mat storedImage;
     // Function declarations
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
-
+    void processImage(Mat &image);
 public:
     ImageConverter(const std::string &navdataCbTopic = "/ardrone/navdata")
         : it_(nh_)
     {
         ibvs = IBVS();
+        correctDesiredPts = true;
         // Subscrive to input video feed and publish output video feed
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
-        
-        correctDesiredPts = true;
     }
 }; // End class
 
@@ -63,6 +63,65 @@ std::cout << "Ros inited";
     return 0;
 }
 
+
+void ImageConverter::processImage(Mat &image)
+{
+    vector<Point2f> corners;
+    Size chessSize(CBOARD_COL,CBOARD_ROW);
+    namedWindow("Image2");
+
+    bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
+    if(patternfound)
+    {
+        Mat gray;
+        cvtColor(image,gray,CV_BGR2GRAY);
+        cornerSubPix(gray,corners,Size(11,11),Size(-1,-1),TermCriteria(CV_TERMCRIT_EPS+ CV_TERMCRIT_ITER,30,0.1));
+
+        // 0 4 15 19...
+        std::vector<Point2f> fourCorners;
+        fourCorners.push_back(corners[0]);
+        fourCorners.push_back(corners[CBOARD_ROW]);
+        fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
+        fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
+        fourCorners.resize(4);
+
+        if(correctDesiredPts)
+        {
+            ibvs.rearrangeDesPts(fourCorners);
+            correctDesiredPts = false;
+        }
+
+        // ibvs.calc_desiredPts(50,35);
+        ibvs.addPtsToImg(image,fourCorners);
+        ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
+        ibvs.update_uv(fourCorners);
+
+
+        //ibvs.update_z_est(0.5);
+        ibvs.update_z_est(fourCorners);
+
+        ibvs.addPtsToImg(image,ibvs.virtCam(fourCorners,navdataCb.getRotM()),cv::Scalar(150,150,0));
+
+        ibvs.calculate_deltaS();
+
+        ibvs.update_Le();
+        ibvs.MP_psinv_Le();
+        ibvs.calculate_vc();
+        //    ibvs.display_params();
+        imshow("Image2",image);
+        cv::waitKey(3);
+    }
+    else
+    {
+    imshow("Image2",image);
+    correctDesiredPts = true;
+    cv::waitKey(3);
+    }
+}
+
+
+
+
 void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
 
@@ -76,66 +135,7 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
-
-    Mat image;
-    image = cv_ptr->image;
-
-    vector<Point2f> corners;
-    Size chessSize(CBOARD_COL,CBOARD_ROW);
-    namedWindow("Image2");
-
-    bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
-    if(patternfound)
-    {
-        Mat gray;
-        cvtColor(image,gray,CV_BGR2GRAY);
-        cornerSubPix(gray,corners,Size(11,11),Size(-1,-1),TermCriteria(CV_TERMCRIT_EPS+ CV_TERMCRIT_ITER,30,0.1));
-
-       // 0 4 15 19...
-       std::vector<Point2f> fourCorners;
-       fourCorners.push_back(corners[0]);
-       fourCorners.push_back(corners[CBOARD_ROW]);
-       fourCorners.push_back(corners[CBOARD_ROW*(CBOARD_COL-1)-1]);
-       fourCorners.push_back(corners[CBOARD_COL*CBOARD_ROW-1]);
-       fourCorners.resize(4);
-
-       if(correctDesiredPts)
-       {
-           ibvs.rearrangeDesPts(fourCorners);
-           correctDesiredPts = false;
-       }
-
-      // ibvs.calc_desiredPts(50,35);
-       ibvs.addPtsToImg(image,fourCorners);
-       ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
-       ibvs.update_uv(fourCorners);
-
-
-       //ibvs.update_z_est(0.5);
-       ibvs.update_z_est(fourCorners);
-
-       ibvs.addPtsToImg(image,ibvs.virtCam(fourCorners,navdataCb.getRotM()),cv::Scalar(150,150,0));
-  //     std::vector<cv::Point2f> tstg;
-  //     tstg.push_back(cv::Point2f(500,200));
-  //     tstg.resize(1);
-  //     ibvs.virtCam(tstg,navdataCb.getRotM());
-  //     ibvs.addPtsToImg(image,tstg,cv::Scalar(150,150,0));
-
-       ibvs.calculate_deltaS();
-
-       ibvs.update_Le();
-       ibvs.MP_psinv_Le();
-       ibvs.calculate_vc();
-//    ibvs.display_params();
-       imshow("Image2",image);
-       cv::waitKey(3);
-    }
-    else
-    {
-        imshow("Image2",image);
-        correctDesiredPts = true;
-        cv::waitKey(3);
-    }
-
+    storedImage = cv_ptr->image;
+    processImage(storedImage);
 }
 

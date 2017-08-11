@@ -10,7 +10,7 @@
 velocity IBVS::calculate_vc()
 {
     vc = Le_psinv * deltaS;
-//    std::cout << " velocity is: " << vc(0,0) << " " << vc(1,0) << " " << vc(2,0) << " " << vc(3,0) << " " << vc(4,0) << " " << vc(5,0) << '\n';
+    std::cout << " velocity is: " << vc(0,0) << " " << vc(1,0) << " " << vc(2,0) << " " << vc(3,0) << " " << vc(4,0) << " " << vc(5,0) << '\n';
 
     return vc;
 }
