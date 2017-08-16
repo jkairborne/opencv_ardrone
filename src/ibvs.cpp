@@ -12,7 +12,13 @@ geometry_msgs::Twist IBVS::calculate_vc()
 {
     geometry_msgs::Twist vcRet;
     vc = Le_psinv * deltaS;
-    std::cout << " velocity is: " << vc(0,0) << " " << vc(1,0) << " " << vc(2,0) << " " << vc(3,0) << " " << vc(4,0) << " " << vc(5,0) << '\n';
+
+    // Swap x and y for coordinate frame issues:
+    double temp = vc(1,0);
+    vc(1,0) = vc(0,0);
+    vc(0,0) = temp;
+
+    display_params();
     vcRet.linear.x = vc(0,0);
     vcRet.linear.y = vc(1,0);
     vcRet.linear.z = vc(2,0);
@@ -86,22 +92,25 @@ void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
 
 //Watch out, this goes increasing angles downwards.
     angleDiff = angleCurrent - angleDes;
+    int offsetx,offsety;
+    offsetx = 30;
+    offsety = 21;
 
     if(angleDiff >= 3*M_PI/4 || angleDiff < -3*M_PI/4)
     {
-        calc_desiredPts(50,35,M_PI);
+        calc_desiredPts(offsetx,offsety,M_PI);
     }
     else if(angleDiff >= M_PI/4)
     {
-        calc_desiredPts(50,35,M_PI/2);
+        calc_desiredPts(offsetx,offsety,M_PI/2);
     }
     else if(angleDiff <= -M_PI/4)
     {
-        calc_desiredPts(50,35,-M_PI/2);
+        calc_desiredPts(offsetx,offsety,-M_PI/2);
     }
     else
     {
-        calc_desiredPts(50,35);
+        calc_desiredPts(offsetx,offsety);
     }
     // We only want this function to be called once to rearrange.
     // It is set to true if the chessboard is lost from the image, back to false here.
@@ -162,8 +171,6 @@ std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input, Eigen::Ma
     double z_virt;
     // Here need to hope that z_est has been recently updated;
 
-    std::cout << "\nInput/output coordinate pairs\n";
-
     for(int i = 0 ; i< input.size(); i++ )
     {
         cv::Point2f fromCenter = input[i] - imageCenter;
@@ -180,35 +187,67 @@ std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input, Eigen::Ma
         temp.y = virtCoords(1,0)*focal_lngth/virtCoords(2,0);
         temp.x = virtCoords(0,0)*focal_lngth/virtCoords(2,0);
 
-
 //        outputs.push_back(cv::Point2f(temp.x+imageCenter.y,temp.y+imageCenter.x));
         outputs.push_back(cv::Point2f(temp+imageCenter));
-
-
-/*        std::cout << " Original image coords x/y : " << input[i].x << "/" << input[i].y << " output image coords x/y : " << temp+imageCenter << '\n';
-        std::cout << "original coords x/y: " << realCoords(0,0) << "/" << realCoords(1,0) << "/" << realCoords(2,0) << " virt coords x/y: " << virtCoords(0,0) << "/" << virtCoords(1,0) << "/" <<  virtCoords(2,0) << "\n";
-        std::cout << "temp.x/temp.y: " << temp.x << "/" << temp.y << "      imageCenter.x/imageCenter.y: " << imageCenter.x << "/" << imageCenter.y << "\n\n";
-*/
-//  std::cout << "temp: " << temp << "Temp plus image center: " << (temp+imageCenter) << "\n\n";
-
-/*        std::cout << "orig coords:  " << input[i].x << " " << input[i].y << ", distance from camera in x and y: " << realCoords(0,0) << " " << realCoords(1,0) << " distance from virtual camera " << virtCoords(0,0) << " " << virtCoords(1,0) << "\n";
-        std::cout << "corrections applied: " << temp.x << " " << temp.y << " Image Center: " << imageCenter.x << " " << imageCenter.y << "\n";
-        std::cout << "temp.x: " << temp.x << "  temp.y : " << temp.y << "\n" << " output x: " << outputs[0].x << "  output y: " << outputs[0].y << "\n\n";
-*/
-        std::cout << input[i] << "\t" << temp+imageCenter << '\n';
     }
-    std::cout << "\nroll, pitch: " << 180*atan2(rotatM(1,2),rotatM(1,1))/M_PI << "  " << 180*atan2(rotatM(2,0),rotatM(0,0))/M_PI << "\tz_est: " << z_est << "z_virt: " << z_virt << '\n';
-        std::cout <<" rotatM: \n"<<  rotatM << "\n";
-//   std::cout << "roll, pitch: " << acos(rotatM(1,1)) << acos(rotatM(0,0)) << '\n';
-/*
-    std::cout<< "\n input points:\n ";
-    for(int j =0; j<input.size();j++){std::cout << input[j].x << "  " << input[j].y << "       ";}
-        std::cout<< "\n output points:\n ";
-    for(int j =0; j<input.size();j++){std::cout << outputs[j].x << "  " << outputs[j].y << "      ";}
-*/
-
     return outputs;
 }
+
+std::vector<cv::Point2f> IBVS::camToImg(std::vector<cv::Point2f> input)
+{
+    std::vector<cv::Point2f> outputs;
+    for(int i = 0 ; i< input.size(); i++ )
+    {
+        outputs.push_back(cv::Point2f(input[i]+imageCenter));
+    }
+    return outputs;
+}
+
+uv IBVS::camToImg(uv in)
+{
+    int row_number1, row_number2;
+    uv out;
+    for(int i=0;i<4;i++)
+    {
+       row_number1 = 2*(i-1);
+       row_number2 = 2*i -1;
+       out(row_number1,0) = in(0,0)+camWdth/2;
+       out(row_number2,0) = in(1,0)+camHght/2;
+    }
+    return out;
+}
+
+uv IBVS::imgToCam(uv in)
+{
+    int row_number1, row_number2;
+    uv out;
+   //       std::cout <<  "in imgToCam: ";
+    for(int i=0;i<4;i++)
+    {
+       row_number1 = 2*(i);
+       row_number2 = 2*i +1;
+       out(row_number1,0) = in(row_number1,0)-camWdth/2;
+       out(row_number2,0) = in(row_number2,0)-camHght/2;
+//      std::cout <<  "out(" << row_number1 <<"): " << out(row_number1,0);
+ //     std::cout <<  "out(" << row_number2 <<"): " << out(row_number2,0);
+    }
+    std::cout << "in: " << in << " out: "<<  out << "\n";
+    return out;
+}
+
+
+
+std::vector<cv::Point2f> IBVS::imgToCam(std::vector<cv::Point2f> input)
+{
+    std::vector<cv::Point2f> outputs;
+    for(int i = 0 ; i< input.size(); i++ )
+    {
+        outputs.push_back(cv::Point2f(input[i]-imageCenter));
+    }
+    return outputs;
+}
+
+
 
 void IBVS::update_z_est(std::vector<cv::Point2f> pts)
 {
@@ -264,6 +303,11 @@ void IBVS::display_Le()
 	std::cout << Le;
 }
 
+void IBVS::display_LePlus()
+{
+    std::cout << Le_psinv;
+}
+
 
 // n should be a number between 1 and 4, depending on the "blob" we want to keep track of.
 void IBVS::update_Le_row(int n, double z_hat)
@@ -272,20 +316,22 @@ void IBVS::update_Le_row(int n, double z_hat)
    row_number1 = 2*(n-1);
    row_number2 = 2*n -1;
    Le(row_number1,0) = -1/z_hat;
-   Le(row_number1,2) = ImagePts(row_number1,0) / z_hat;
-   Le(row_number1,3) = ImagePts(row_number1,0) * ImagePts(row_number2,0);
-   Le(row_number1,4) = - (1 + ImagePts(row_number1,0)*ImagePts(row_number1,0));
-   Le(row_number1,5) = ImagePts(row_number2,0);
+   Le(row_number1,2) = CamPts(row_number1,0) / z_hat;
+   Le(row_number1,3) = CamPts(row_number1,0) * CamPts(row_number2,0);
+   Le(row_number1,4) = - (1 + CamPts(row_number1,0)*CamPts(row_number1,0));
+   Le(row_number1,5) = CamPts(row_number2,0);
 //Populate second row of that particular pair 
    Le(row_number2,1) = -1/z_hat;
-   Le(row_number2,2) = ImagePts(row_number2,0) / z_hat;
-   Le(row_number2,3) = 1 + ImagePts(row_number1,0)*ImagePts(row_number1,0);
-   Le(row_number2,4) = -ImagePts(row_number1,0) * ImagePts(row_number2,0);
-   Le(row_number2,5) = -ImagePts(row_number1,0);
+   Le(row_number2,2) = CamPts(row_number2,0) / z_hat;
+   Le(row_number2,3) = 1 + CamPts(row_number1,0)*CamPts(row_number1,0);
+   Le(row_number2,4) = -CamPts(row_number1,0) * CamPts(row_number2,0);
+   Le(row_number2,5) = -CamPts(row_number1,0);
 }
 
 void IBVS::update_Le(double z_hat)
 {
+    update_camPts();
+
 	IBVS::update_Le_row(1,z_hat);
 	IBVS::update_Le_row(2,z_hat);
 	IBVS::update_Le_row(3,z_hat);
@@ -309,6 +355,13 @@ void IBVS::manual_Le(std::vector<double> vecLe)
 void IBVS::update_Le()
 {
     update_Le(z_est);
+}
+
+void IBVS::update_camPts()
+{
+    std::cout << "l356";
+    CamPts = imgToCam(ImagePts);
+    std::cout << "l358";
 }
 
 void IBVS::update_uv (std::vector<cv::Point2f> uv_new, bool updateDesired)
@@ -376,7 +429,7 @@ void IBVS::update_uv_row (int update_pair, double new_u, double new_v, bool upda
 
 IBVS::IBVS(double baseline, double focal_length, double camWidth, double camHeight)
 {
-    Pinv_tolerance = 0.1;
+    Pinv_tolerance = 0.000001;
     correctDesiredPts = true;
     focal_lngth = focal_length;
     bsln = baseline;
@@ -458,18 +511,6 @@ void IBVS::calc_desiredPts(double offsetx, double offsety, double psi, cv::Point
     desPtNew[3] = center+ cv::Point2f(rVecMat1(0,3),rVecMat1(1,3));
    // desiredPts =
     desiredPts << desPtNew[0].x, desPtNew[0].y , desPtNew[1].x, desPtNew[1].y,desPtNew[2].x, desPtNew[2].y,desPtNew[3].x, desPtNew[3].y;
-    //std::cout << "\n desiredPtNew: \n";
-/*    for(int i =0;i<4;i++)
-    {
-        desiredPts(2*i,0) = desPtNew[i].x;
-        desiredPts(2*i+1,0) = desPtNew[i].y;
-      //  std::cout << desPtNew[i].x << "  " << desPtNew[i].y << " ";
-    }
-*/
-    std::cout << "\ndesired points in rearrange call";
-    for(int i=0;i<8;i++) {std::cout << desiredPts[i] << " ";}
-
-
 }
 
 void IBVS::disp_uv_row(int n)

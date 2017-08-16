@@ -14,7 +14,7 @@ typedef Eigen::Matrix<float, 8, 1> uv;
 typedef Eigen::Matrix<float, 6, 1> velocity;
 
 class IBVS {
-    uv ImagePts, desiredPts, deltaS;
+    uv ImagePts, CamPts, desiredPts, deltaS;
     LeMat Le;
     LePlus Le_psinv, DiagMat;
     //focal length is measured in pixels. bsln is in meters, and represents the line distance separating the two points in our z_est calculation
@@ -54,6 +54,7 @@ class IBVS {
     void update_Le(double);
     void manual_Le(std::vector<double> vecLe);
     void update_Le();
+    void update_camPts();
 
     // calculate functions
     void MP_psinv_Le();
@@ -61,8 +62,16 @@ class IBVS {
     void calculate_deltaS();
     std::vector<cv::Point2f> virtCam(std::vector<cv::Point2f> input, Eigen::Matrix3d rotatM);
 
+    std::vector<cv::Point2f> imgToCam(std::vector<cv::Point2f> input);
+    std::vector<cv::Point2f> camToImg(std::vector<cv::Point2f> input);
+    uv camToImg(uv in);
+    uv imgToCam(uv in);
+
+
+
     //display functions
     void display_Le();
+    void display_LePlus();
     void display_params();
     void disp_uv_row(int n);
     void disp_uv();
