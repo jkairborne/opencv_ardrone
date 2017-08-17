@@ -103,8 +103,8 @@ void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
 //Watch out, this goes increasing angles downwards.
     angleDiff = angleCurrent - angleDes;
     int offsetx,offsety;
-    offsetx = 30;
-    offsety = 21;
+    offsetx = 40;
+    offsety = 28;
 
     if(angleDiff >= 3*M_PI/4 || angleDiff < -3*M_PI/4)
     {

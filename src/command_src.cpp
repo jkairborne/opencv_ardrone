@@ -8,20 +8,9 @@
 */
 #include <iostream>
 #include <ctype.h>
-#include "ibvs.h"
-#include "opencv2/opencv.hpp"
+#include "std_msgs/Int16.h"
 
 #include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <vector>
-#include <algorithm>
-#include "navdata_cb_ardrone.h"
-#include "geometry_msgs/Twist.h"
-#include "std_msgs/Int16.h"
 
 static const int CBOARD_COL = 5;
 static const int CBOARD_ROW = 4;
@@ -29,38 +18,24 @@ static const int CBOARD_ROW = 4;
 using namespace std;
 using namespace cv;
 
-class ImageConverter
+class commandSource
 {
     ros::NodeHandle nh_;
     ros::Publisher pub_;
-    ros::Publisher pub2_;
-    std_msgs::Int16 cmdFromIBVS, cmdNotFromIBVS;
-    image_transport::ImageTransport it_;
-    image_transport::Subscriber image_sub_;
-    IBVS ibvs;
-    navdata_cb_ardrone navdataCb;
-    bool correctDesiredPts;
-    Mat storedImage;
-    geometry_msgs::Twist cmdToSend;
-    int scalingLat, scalingVert, scalingPsi;
+    ros::Subscriber sub_;
+    int currentSrc;
     // Function declarations
-    void imageCb(const sensor_msgs::ImageConstPtr& msg);
-    void processImage(Mat &image);
+    void Cb(const std_msgs::Int16& msg);
 public:
-    ImageConverter(const std::string &navdataCbTopic = "/ardrone/navdata")
-        : it_(nh_)
+    commandSource()
     {
         ibvs = IBVS();
         correctDesiredPts = true;
         // Subscrive to input video feed and publish output video feed
-        image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
-           &ImageConverter::imageCb, this);
+        sub_ = nh_.subscribe("src_cmd", 5,
+           &commandSource::Cb, this);
         pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_ibvs", 10);
-        pub2_ = nh_.advertise<std_msgs::Int16>("/src_cmd", 10);
-        cmdFromIBVS.data = 1;
-        cmdNotFromIBVS.data = 0;
-
-        scalingLat = 1000;
+        scalingLat = 1500;
         scalingVert = 2;
         scalingPsi = 2;
     }
@@ -71,13 +46,13 @@ int main(int argc, char** argv)
     std::cout << "now at the beginning of all";
     ros::init(argc, argv, "image_converter");
 std::cout << "Ros inited";
-    ImageConverter ic;
+    commandSource ic;
     ros::spin();
     return 0;
 }
 
 
-void ImageConverter::processImage(Mat &image)
+void commandSource::processImage(Mat &image)
 {
     vector<Point2f> corners;
     Size chessSize(CBOARD_COL,CBOARD_ROW);
@@ -130,7 +105,6 @@ void ImageConverter::processImage(Mat &image)
         cmdToSend.angular.z = cmdToSend.angular.z/scalingPsi;
 
         pub_.publish(cmdToSend);
-        pub2_.publish(cmdFromIBVS);
 
         imshow("Image2",image);
         cv::waitKey(3);
@@ -138,13 +112,12 @@ void ImageConverter::processImage(Mat &image)
     else
     {
     imshow("Image2",image);
-    if(!correctDesiredPts){pub2_.publish(cmdNotFromIBVS);}
     correctDesiredPts = true;
     cv::waitKey(3);
     }
 }
 
-void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
+void commandSource::imageCb(const std_msgs::Int16& msg)
 {
 
     cv_bridge::CvImagePtr cv_ptr;
@@ -160,4 +133,3 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
     storedImage = cv_ptr->image;
     processImage(storedImage);
 }
-
