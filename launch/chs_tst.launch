@@ -11,6 +11,7 @@
 		<remap from="cmd_vel" to="key_output"/>
   </node>
   <include file="$(find opencv_ardrone)/launch/ardrone.launch"/>
+
     <node name="filter_empty_msgs" pkg="ardronecontrol" type="filter_empty_msgs"/>
     <node name="vel_mux" pkg="twist_mux" type="twist_mux">
         <remap from="twist" to="twist_mux/cmd_vel"/>

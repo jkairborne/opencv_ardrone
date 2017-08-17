@@ -43,9 +43,8 @@ class ImageConverter
     // Function declarations
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
     void processImage(Mat &image);
-    int ct,ct2,imgct;
 public:
-    ImageConverter(const std::string &navdataCbTopic = "/ardrone/ta")
+    ImageConverter(const std::string &navdataCbTopic = "/ardrone/navdata")
         : it_(nh_)
     {
         ibvs = IBVS();
@@ -76,11 +75,6 @@ void ImageConverter::processImage(Mat &image)
     vector<Point2f> corners;
     Size chessSize(CBOARD_COL,CBOARD_ROW);
     namedWindow("Image2");
-    /*
-	if (ct>480){return;}
-    ct += 32;
-    ct2 += 18;
-*/
 
     bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
     if(patternfound)
@@ -109,11 +103,11 @@ void ImageConverter::processImage(Mat &image)
         ibvs.update_uv(fourCorners);
 
 
-        //ibvs.update_z_est(0.5);
+        //Want to update z_est just before calling virtual camera fct because it needs height
         ibvs.update_z_est(fourCorners);
-
-        ibvs.addPtsToImg(image,ibvs.virtCam(fourCorners,navdataCb.getRotM()),cv::Scalar(150,150,0));
-
+        ibvs.update_VImPts(navdataCb.getRotM());
+        ibvs.update_VCamPts();
+        ibvs.addPtsToImg(image,ibvs.getVImPtsPt2F(),cv::Scalar(150,150,0));
         ibvs.calculate_deltaS();
 
         ibvs.update_Le();
@@ -141,61 +135,6 @@ void ImageConverter::processImage(Mat &image)
     }
 }
 
- /*   Point2f Corners1,Corners2,Corners3,Corners4;
-       Corners1 = Point2f(ct-35,ct2+50);
-    Corners2 = Point2f(ct-35,ct2-50);
-    Corners3 = Point2f(ct+35,ct2+50);
-    Corners4 = Point2f(ct+35,ct2-50);
-    std::vector<Point2f> fourCorners;
-
-    fourCorners.push_back(Corners1);
-    fourCorners.push_back(Corners2);
-    fourCorners.push_back(Corners3);
-    fourCorners.push_back(Corners4);
-    fourCorners.resize(4);
-
-    if(correctDesiredPts)
-    {
-        ibvs.rearrangeDesPts(fourCorners);
-        correctDesiredPts = false;
-    }
-
-    // ibvs.calc_desiredPts(50,35);
-    ibvs.addPtsToImg(image,fourCorners);
-    ibvs.addPtsToImg(image,ibvs.getDesPtsPt2F(),cv::Scalar(100,100,100));
-    ibvs.update_uv(fourCorners);
-
-
-    //ibvs.update_z_est(0.5);
-    ibvs.update_z_est(fourCorners);
-
-    ibvs.addPtsToImg(image,ibvs.virtCam(fourCorners,navdataCb.getRotM()),cv::Scalar(150,150,0));
-
-    ibvs.calculate_deltaS();
-
-    ibvs.update_Le();
-    ibvs.MP_psinv_Le();
-    cmdToSend = ibvs.calculate_vc();
-
-    // Manipulate and send the command:
-    cmdToSend.linear.x = cmdToSend.linear.x /scalingLat;
-    cmdToSend.linear.y = cmdToSend.linear.y /scalingLat;
-    cmdToSend.linear.z = cmdToSend.linear.z /scalingVert;
-    cmdToSend.angular.x = 0.1;
-    cmdToSend.angular.y = 0;
-    cmdToSend.angular.z = cmdToSend.angular.z/scalingPsi;
-
-    pub_.publish(cmdToSend);
-
-    imshow("Image2",image);
-    cv::waitKey(3);
-    }
-*/
-
-
-
-
-
 void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
 
@@ -210,9 +149,6 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
     storedImage = cv_ptr->image;
-    imgct+=1;
-    if(imgct%10 ==0){
     processImage(storedImage);
-	}
 }
 

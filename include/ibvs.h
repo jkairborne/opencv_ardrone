@@ -14,7 +14,7 @@ typedef Eigen::Matrix<float, 8, 1> uv;
 typedef Eigen::Matrix<float, 6, 1> velocity;
 
 class IBVS {
-    uv ImagePts, CamPts, desiredPts, deltaS;
+    uv ImagePts,VImagePts, VCamPts, desiredPts, deltaS;
     LeMat Le;
     LePlus Le_psinv, DiagMat;
     //focal length is measured in pixels. bsln is in meters, and represents the line distance separating the two points in our z_est calculation
@@ -54,20 +54,18 @@ class IBVS {
     void update_Le(double);
     void manual_Le(std::vector<double> vecLe);
     void update_Le();
-    void update_camPts();
+    void update_VImPts(Eigen::Matrix3d rotatM);
+    void update_VCamPts();
 
     // calculate functions
     void MP_psinv_Le();
     geometry_msgs::Twist calculate_vc();
     void calculate_deltaS();
     std::vector<cv::Point2f> virtCam(std::vector<cv::Point2f> input, Eigen::Matrix3d rotatM);
-
     std::vector<cv::Point2f> imgToCam(std::vector<cv::Point2f> input);
     std::vector<cv::Point2f> camToImg(std::vector<cv::Point2f> input);
     uv camToImg(uv in);
     uv imgToCam(uv in);
-
-
 
     //display functions
     void display_Le();
@@ -78,6 +76,7 @@ class IBVS {
     void addPtsToImg(cv::Mat& img, std::vector<cv::Point2f> ptsToAdd, cv::Scalar color = cv::Scalar(50.));
 
     std::vector<cv::Point2f> getDesPtsPt2F();
+    std::vector<cv::Point2f> getVImPtsPt2F();
     void rearrangeDesPts(std::vector<cv::Point2f> fourCorners);
 };
 

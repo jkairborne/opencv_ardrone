@@ -30,7 +30,7 @@ geometry_msgs::Twist IBVS::calculate_vc()
 
 void IBVS::calculate_deltaS()
 {
-    deltaS = ImagePts - desiredPts;
+    deltaS = VImagePts - desiredPts;
 //std::cout << "Just before navdata get rpy\n";//32
 
     navdata.get_rpy();
@@ -63,6 +63,16 @@ std::vector<cv::Point2f> IBVS::getDesPtsPt2F()
     for(int i = 0 ; i < desiredPts.rows()/2 ; i++)
     {
         output[i] = cv::Point2f(desiredPts(2*i),desiredPts(2*i+1));
+    }
+    return output;
+}
+
+std::vector<cv::Point2f> IBVS::getVImPtsPt2F()
+{
+    std::vector<cv::Point2f> output(VCamPts.rows()/2);
+    for(int i = 0 ; i < VCamPts.rows()/2 ; i++)
+    {
+        output[i] = cv::Point2f(VImagePts(2*i),VImagePts(2*i+1));
     }
     return output;
 }
@@ -167,7 +177,7 @@ uv IBVS::point2fToUv(std::vector<cv::Point2f> input)
 std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input, Eigen::Matrix3d rotatM)
 {
     std::vector<cv::Point2f> outputs;
-    
+
     double z_virt;
     // Here need to hope that z_est has been recently updated;
 
@@ -180,7 +190,7 @@ std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input, Eigen::Ma
         realCoords(0,0) = z_est * fromCenter.x/focal_lngth;
 
         virtCoords = rotatM * realCoords;
-        
+
         cv::Point2f temp;
         z_virt = virtCoords(2,0);
 
@@ -190,8 +200,10 @@ std::vector<cv::Point2f> IBVS::virtCam(std::vector<cv::Point2f> input, Eigen::Ma
 //        outputs.push_back(cv::Point2f(temp.x+imageCenter.y,temp.y+imageCenter.x));
         outputs.push_back(cv::Point2f(temp+imageCenter));
     }
+
     return outputs;
 }
+
 
 std::vector<cv::Point2f> IBVS::camToImg(std::vector<cv::Point2f> input)
 {
@@ -231,7 +243,7 @@ uv IBVS::imgToCam(uv in)
 //      std::cout <<  "out(" << row_number1 <<"): " << out(row_number1,0);
  //     std::cout <<  "out(" << row_number2 <<"): " << out(row_number2,0);
     }
-    std::cout << "in: " << in << " out: "<<  out << "\n";
+//    std::cout << "in: " << in << " out: "<<  out << "\n";
     return out;
 }
 
@@ -316,21 +328,21 @@ void IBVS::update_Le_row(int n, double z_hat)
    row_number1 = 2*(n-1);
    row_number2 = 2*n -1;
    Le(row_number1,0) = -1/z_hat;
-   Le(row_number1,2) = CamPts(row_number1,0) / z_hat;
-   Le(row_number1,3) = CamPts(row_number1,0) * CamPts(row_number2,0);
-   Le(row_number1,4) = - (1 + CamPts(row_number1,0)*CamPts(row_number1,0));
-   Le(row_number1,5) = CamPts(row_number2,0);
+   Le(row_number1,2) = VCamPts(row_number1,0) / z_hat;
+   Le(row_number1,3) = VCamPts(row_number1,0) * VCamPts(row_number2,0);
+   Le(row_number1,4) = - (1 + VCamPts(row_number1,0)*VCamPts(row_number1,0));
+   Le(row_number1,5) = VCamPts(row_number2,0);
 //Populate second row of that particular pair 
    Le(row_number2,1) = -1/z_hat;
-   Le(row_number2,2) = CamPts(row_number2,0) / z_hat;
-   Le(row_number2,3) = 1 + CamPts(row_number1,0)*CamPts(row_number1,0);
-   Le(row_number2,4) = -CamPts(row_number1,0) * CamPts(row_number2,0);
-   Le(row_number2,5) = -CamPts(row_number1,0);
+   Le(row_number2,2) = VCamPts(row_number2,0) / z_hat;
+   Le(row_number2,3) = 1 + VCamPts(row_number1,0)*VCamPts(row_number1,0);
+   Le(row_number2,4) = -VCamPts(row_number1,0) * VCamPts(row_number2,0);
+   Le(row_number2,5) = -VCamPts(row_number1,0);
 }
 
 void IBVS::update_Le(double z_hat)
 {
-    update_camPts();
+
 
 	IBVS::update_Le_row(1,z_hat);
 	IBVS::update_Le_row(2,z_hat);
@@ -357,11 +369,14 @@ void IBVS::update_Le()
     update_Le(z_est);
 }
 
-void IBVS::update_camPts()
+void IBVS::update_VImPts(Eigen::Matrix3d rotatM)
 {
-    std::cout << "l356";
-    CamPts = imgToCam(ImagePts);
-    std::cout << "l358";
+    VImagePts = point2fToUv(virtCam(uvToPoint2f(ImagePts),rotatM));
+}
+
+void IBVS::update_VCamPts()
+{
+    VCamPts = imgToCam(VImagePts);
 }
 
 void IBVS::update_uv (std::vector<cv::Point2f> uv_new, bool updateDesired)

@@ -28,6 +28,7 @@ void navdata_cb_ardrone::callback(const ardrone_autonomy::Navdata& msg)
     pitch = msg.rotY*M_PI/180;
     yaw = msg.rotZ*M_PI/180;
 
+
 //23    std::cout << "callback roll, pitch, yaw: " << roll << '\t' << pitch << '\t' << yaw << '\n';
     std::vector<double> abc(3);
     abc.resize(3);
@@ -110,9 +111,9 @@ Eigen::Matrix3d navdata_cb_ardrone::getRotM()
 
 
 
-/*
-    std::cout << '\n' << "In Navdata cb\n";
 
+//    std::cout << '\n' << "In Navdata cb\n";
+/*
     std::cout << output(0,0) << " " << output(0,1) << " " << output(0,2) << "\n" <<\
                  output(1,0) << " " << output(1,1) << " " << output(1,2) << "\n" <<\
                  output(2,0) << " " << output(2,1) << " " << output(2,2) << "\n";
