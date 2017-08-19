@@ -64,10 +64,10 @@ public:
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
         pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_ibvs", 10);
-        pub2_ = nh_.advertise<std_msgs::Int16>("/src_cmd", 10);
+        pub2_ = nh_.advertise<std_msgs::Int16>("/src_cmd", 1);
         pub3_ = nh_.advertise<opencv_ardrone::ImgData>("/img_data", 10);
-        cmdFromIBVS.data = 1;
-        cmdNotFromIBVS.data = 0;
+        cmdFromIBVS.data = 2;
+        cmdNotFromIBVS.data = 1;
 
         scalingLat = 3000;
         scalingVert = 2;
@@ -111,6 +111,7 @@ void ImageConverter::processImage(Mat &image)
         {
             ibvs.rearrangeDesPts(fourCorners);
             correctDesiredPts = false;
+            pub2_.publish(cmdFromIBVS);
         }
 
         // ibvs.calc_desiredPts(50,35);
@@ -140,7 +141,7 @@ void ImageConverter::processImage(Mat &image)
         cmdToSend.angular.z = cmdToSend.angular.z/scalingPsi;
 
         pub_.publish(cmdToSend);
-        pub2_.publish(cmdFromIBVS);
+
 
         fill_ImgData(ibvs.getVImPtsEig(),ibvs.getDesPtsEig(),ibvs.getZ_est());
         pub3_.publish(ImgData);
