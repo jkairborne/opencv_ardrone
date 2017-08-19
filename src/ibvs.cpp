@@ -8,6 +8,7 @@
 #include <cmath>
 #include "geometry_msgs/Twist.h"
 
+
 geometry_msgs::Twist IBVS::calculate_vc()
 {
     geometry_msgs::Twist vcRet;
@@ -75,6 +76,21 @@ std::vector<cv::Point2f> IBVS::getVImPtsPt2F()
         output[i] = cv::Point2f(VImagePts(2*i),VImagePts(2*i+1));
     }
     return output;
+}
+
+uv IBVS::getDesPtsEig()
+{
+    return desiredPts;
+}
+
+uv IBVS::getVImPtsEig()
+{
+    return VImagePts;
+}
+
+double IBVS::getZ_est()
+{
+    return z_est;
 }
 
 double IBVS::distance_calc(cv::Point2f pt1, cv::Point2f pt2)

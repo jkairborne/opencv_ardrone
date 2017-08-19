@@ -77,6 +77,9 @@ class IBVS {
 
     std::vector<cv::Point2f> getDesPtsPt2F();
     std::vector<cv::Point2f> getVImPtsPt2F();
+    uv getDesPtsEig();
+    uv getVImPtsEig();
+    double getZ_est();
     void rearrangeDesPts(std::vector<cv::Point2f> fourCorners);
 };
 

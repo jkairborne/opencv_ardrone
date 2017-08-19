@@ -22,6 +22,7 @@
 #include "navdata_cb_ardrone.h"
 #include "geometry_msgs/Twist.h"
 #include "std_msgs/Int16.h"
+#include "opencv_ardrone/ImgData.h"
 
 static const int CBOARD_COL = 5;
 static const int CBOARD_ROW = 4;
@@ -33,19 +34,26 @@ class ImageConverter
 {
     ros::NodeHandle nh_;
     ros::Publisher pub_;
+
     ros::Publisher pub2_;
     std_msgs::Int16 cmdFromIBVS, cmdNotFromIBVS;
+
+    ros::Publisher pub3_;
+    opencv_ardrone::ImgData ImgData;
+
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
     IBVS ibvs;
     navdata_cb_ardrone navdataCb;
     bool correctDesiredPts;
     Mat storedImage;
+
     geometry_msgs::Twist cmdToSend;
     int scalingLat, scalingVert, scalingPsi;
     // Function declarations
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
     void processImage(Mat &image);
+    void fill_ImgData(uv virt, uv des, double z_hat);
 public:
     ImageConverter(const std::string &navdataCbTopic = "/ardrone/navdata")
         : it_(nh_)
@@ -57,10 +65,11 @@ public:
            &ImageConverter::imageCb, this);
         pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_ibvs", 10);
         pub2_ = nh_.advertise<std_msgs::Int16>("/src_cmd", 10);
+        pub3_ = nh_.advertise<opencv_ardrone::ImgData>("/img_data", 10);
         cmdFromIBVS.data = 1;
         cmdNotFromIBVS.data = 0;
 
-        scalingLat = 1000;
+        scalingLat = 3000;
         scalingVert = 2;
         scalingPsi = 2;
     }
@@ -121,6 +130,7 @@ void ImageConverter::processImage(Mat &image)
         ibvs.MP_psinv_Le();
         cmdToSend = ibvs.calculate_vc();
 
+
         // Manipulate and send the command:
         cmdToSend.linear.x = cmdToSend.linear.x /scalingLat;
         cmdToSend.linear.y = cmdToSend.linear.y /scalingLat;
@@ -132,6 +142,8 @@ void ImageConverter::processImage(Mat &image)
         pub_.publish(cmdToSend);
         pub2_.publish(cmdFromIBVS);
 
+        fill_ImgData(ibvs.getVImPtsEig(),ibvs.getDesPtsEig(),ibvs.getZ_est());
+        pub3_.publish(ImgData);
         imshow("Image2",image);
         cv::waitKey(3);
     }
@@ -143,6 +155,33 @@ void ImageConverter::processImage(Mat &image)
     cv::waitKey(3);
     }
 }
+
+void ImageConverter::fill_ImgData(uv virt, uv des, double z_hat)
+{
+    ImgData.x0 = virt(0,0);
+    ImgData.y0 = virt(1,0);
+    ImgData.x1 = virt(2,0);
+    ImgData.y1 = virt(3,0);
+    ImgData.x2 = virt(4,0);
+    ImgData.y2 = virt(5,0);
+    ImgData.x3 = virt(6,0);
+    ImgData.y3 = virt(7,0);
+    ImgData.desx0 = des(0,0);
+    ImgData.desy0 = des(1,0);
+    ImgData.desx1 = des(2,0);
+    ImgData.desy1 = des(3,0);
+    ImgData.desx2 = des(4,0);
+    ImgData.desy2 = des(5,0);
+    ImgData.desx3 = des(6,0);
+    ImgData.desy3 = des(7,0);
+    ImgData.z_est = z_hat;
+    ImgData.x_c = (virt(0,0)+virt(2,0) + virt(4,0)+virt(6,0))/4;
+    ImgData.y_c = (virt(1,0)+virt(3,0) + virt(5,0)+virt(7,0))/4;
+    ImgData.desx_c = (des(0,0)+des(2,0) + des(4,0)+des(6,0))/4;
+    ImgData.desy_c = (des(1,0)+des(3,0) + des(5,0)+des(7,0))/4;
+}
+
+
 
 void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
