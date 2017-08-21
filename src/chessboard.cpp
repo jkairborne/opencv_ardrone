@@ -63,9 +63,9 @@ public:
         // Subscrive to input video feed and publish output video feed
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
-        pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_ibvs", 10);
+        pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_ibvs", 1);
         pub2_ = nh_.advertise<std_msgs::Int16>("/src_cmd", 1);
-        pub3_ = nh_.advertise<opencv_ardrone::ImgData>("/img_data", 10);
+        pub3_ = nh_.advertise<opencv_ardrone::ImgData>("/img_data", 1);
         cmdFromIBVS.data = 2;
         cmdNotFromIBVS.data = 1;
 
@@ -180,9 +180,11 @@ void ImageConverter::fill_ImgData(uv virt, uv des, double z_hat)
     ImgData.y_c = (virt(1,0)+virt(3,0) + virt(5,0)+virt(7,0))/4;
     ImgData.desx_c = (des(0,0)+des(2,0) + des(4,0)+des(6,0))/4;
     ImgData.desy_c = (des(1,0)+des(3,0) + des(5,0)+des(7,0))/4;
+
+    printf("\n%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d, centers: %f %f ",ImgData.x0,ImgData.y0,ImgData.x1,ImgData.y1,ImgData.x2\
+           ImgData.y2,ImgData.x3,ImgData.y3,ImgData.desx0,ImgData.desy0,ImgData.desx1,ImgData.desy1,ImgData.desx2\
+           ImgData.desy2,ImgData.desx3,ImgData.desy3,ImgData.x_c,ImgData.y_c);
 }
-
-
 
 void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {

@@ -1,5 +1,5 @@
-uint8 x_c
-uint8 y_c
+float32 x_c
+float32 y_c
 uint8 desx_c
 uint8 desy_c
 uint8 x0
