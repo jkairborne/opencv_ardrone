@@ -129,8 +129,6 @@ include_directories(
 
 
 set(HEADER_SOURCES
-    src/momentfinder.cpp
-    src/hsvselector.cpp
     src/ibvs.cpp
     src/navdata_cb_ardrone.cpp
 )
@@ -165,8 +163,8 @@ add_executable(test1 src/test1.cpp ${HEADER_SOURCES})
 ## Specify libraries to link a library or executable target against
 target_link_libraries(test1 ${catkin_LIBRARIES})
 
-add_executable(goodfeatures src/goodfeatures.cpp)
-target_link_libraries(goodfeatures ${catkin_LIBRARIES})
+#add_executable(goodfeatures src/goodfeatures.cpp)
+#target_link_libraries(goodfeatures ${catkin_LIBRARIES})
 
 add_executable(test_publisher src/test_publisher.cpp)
 target_link_libraries(test_publisher ${catkin_LIBRARIES})
@@ -174,21 +172,14 @@ target_link_libraries(test_publisher ${catkin_LIBRARIES})
 add_executable(rec_video src/rec_video.cpp)
 target_link_libraries(rec_video ${catkin_LIBRARIES})
 
-add_executable(camshift src/camshift.cpp)
-target_link_libraries(camshift ${catkin_LIBRARIES})
+#add_executable(camshift src/camshift.cpp)
+#target_link_libraries(camshift ${catkin_LIBRARIES})
 
-add_executable(multicolor src/multicolor.cpp)
-target_link_libraries(multicolor ${catkin_LIBRARIES})
+#add_executable(multicolor src/multicolor.cpp)
+#target_link_libraries(multicolor ${catkin_LIBRARIES})
 
 add_executable(chessboard src/chessboard.cpp ${HEADER_SOURCES})
 target_link_libraries(chessboard ${catkin_LIBRARIES})
-
-add_executable(test2 src/test2.cpp ${HEADER_SOURCES})
-target_link_libraries(test2 ${catkin_LIBRARIES})
-
-
-#add_executable(momentfinder src/momentfinder.cpp)
-#target_link_libraries(momentfinder ${catkin_LIBRARIES})
 
 #add_executable(hsvselector src/hsvselector.cpp)
 #target_link_libraries(hsvselector ${catkin_LIBRARIES})
