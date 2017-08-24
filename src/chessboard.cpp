@@ -50,6 +50,7 @@ class ImageConverter
 
     geometry_msgs::Twist cmdToSend;
     int scalingLat, scalingVert, scalingPsi;
+    int count;
     // Function declarations
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
     void processImage(Mat &image);
@@ -68,8 +69,9 @@ public:
         pub3_ = nh_.advertise<opencv_ardrone::ImgData>("/img_data", 1);
         cmdFromIBVS.data = 2;
         cmdNotFromIBVS.data = 1;
+        count=0;
 
-        scalingLat = 3000;
+        scalingLat = 4000;
         scalingVert = 2;
         scalingPsi = 2;
     }
@@ -91,7 +93,7 @@ void ImageConverter::processImage(Mat &image)
     vector<Point2f> corners;
     Size chessSize(CBOARD_COL,CBOARD_ROW);
     namedWindow("Image2");
-
+    count+=1;
     bool patternfound = findChessboardCorners(image, chessSize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
     if(patternfound)
     {
@@ -142,10 +144,10 @@ void ImageConverter::processImage(Mat &image)
 
         pub_.publish(cmdToSend);
 
-
         fill_ImgData(ibvs.getVImPtsEig(),ibvs.getDesPtsEig(),ibvs.getZ_est());
         pub3_.publish(ImgData);
         imshow("Image2",image);
+
         cv::waitKey(3);
     }
     else
@@ -181,9 +183,14 @@ void ImageConverter::fill_ImgData(uv virt, uv des, double z_hat)
     ImgData.desx_c = (des(0,0)+des(2,0) + des(4,0)+des(6,0))/4;
     ImgData.desy_c = (des(1,0)+des(3,0) + des(5,0)+des(7,0))/4;
 
-    printf("\n%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d, centers: %f %f ",ImgData.x0,ImgData.y0,ImgData.x1,ImgData.y1,ImgData.x2\
-           ImgData.y2,ImgData.x3,ImgData.y3,ImgData.desx0,ImgData.desy0,ImgData.desx1,ImgData.desy1,ImgData.desx2\
-           ImgData.desy2,ImgData.desx3,ImgData.desy3,ImgData.x_c,ImgData.y_c);
+/*    printf("\n x,desx, y,desy0: %f %f %f %f \n",ImgData.x0,virt(0,0),ImgData.y0,virt(1,0));
+    printf("x,desx, y,desy1: %f %f %f %f \n",ImgData.x1,virt(2,0),ImgData.y1,virt(3,0));
+    printf("x,desx, y,desy2: %f %f %f %f \n",ImgData.x2,virt(4,0),ImgData.y2,virt(5,0));
+    printf("x,desx, y,desy3: %f %f %f %f \n",ImgData.x3,virt(6,0),ImgData.y3,virt(7,0));
+    printf("\n%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f, centers: %f %f ",ImgData.x0,ImgData.y0,ImgData.x1,ImgData.y1,ImgData.x2,\
+           ImgData.y2,ImgData.x3,ImgData.y3,ImgData.desx0,ImgData.desy0,ImgData.desx1,ImgData.desy1,ImgData.desx2,\
+           ImgData.desy2,ImgData.desx3,ImgData.desy3,ImgData.x_c,ImgData.y_c);*/
+
 }
 
 void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)

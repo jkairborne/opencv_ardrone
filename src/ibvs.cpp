@@ -19,7 +19,7 @@ geometry_msgs::Twist IBVS::calculate_vc()
     vc(1,0) = vc(0,0);
     vc(0,0) = temp;
 
-    display_params();
+   // display_params();
     vcRet.linear.x = vc(0,0);
     vcRet.linear.y = vc(1,0);
     vcRet.linear.z = vc(2,0);
