@@ -71,9 +71,9 @@ public:
         cmdNotFromIBVS.data = 1;
         count=0;
 
-        scalingLat = 4000;
-        scalingVert = 2;
-        scalingPsi = 2;
+        scalingLat = 5000;
+        scalingVert = 2.5;
+        scalingPsi = 2.5;
     }
 }; // End class
 
