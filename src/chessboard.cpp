@@ -34,6 +34,7 @@ class ImageConverter
 {
     ros::NodeHandle nh_;
     ros::Publisher pub_;
+    geometry_msgs::Twist empTwist;
 
     ros::Publisher pub2_;
     std_msgs::Int16 cmdFromIBVS, cmdNotFromIBVS;
@@ -64,24 +65,29 @@ public:
         // Subscrive to input video feed and publish output video feed
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
-        pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_ibvs", 1);
+        pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_IBVS", 1);
         pub2_ = nh_.advertise<std_msgs::Int16>("/src_cmd", 1);
         pub3_ = nh_.advertise<opencv_ardrone::ImgData>("/img_data", 1);
         cmdFromIBVS.data = 2;
         cmdNotFromIBVS.data = 1;
         count=0;
 
-        scalingLat = 5000;
-        scalingVert = 2.5;
-        scalingPsi = 2.5;
+        scalingLat = 4000;
+        scalingVert = 2;
+        scalingPsi = 2;
+
+        empTwist.linear.x =0;
+        empTwist.linear.y =0;
+        empTwist.linear.z =0;
+        empTwist.angular.x =0;
+        empTwist.angular.y =0;
+        empTwist.angular.z =0;
     }
 }; // End class
 
 int main(int argc, char** argv)
 {
-    std::cout << "now at the beginning of all";
     ros::init(argc, argv, "image_converter");
-std::cout << "Ros inited";
     ImageConverter ic;
     ros::spin();
     return 0;
@@ -154,6 +160,7 @@ void ImageConverter::processImage(Mat &image)
     {
     imshow("Image2",image);
     if(!correctDesiredPts){pub2_.publish(cmdNotFromIBVS);}
+    pub_.publish(empTwist); // if image no longer visible, send empty command
     correctDesiredPts = true;
     cv::waitKey(3);
     }

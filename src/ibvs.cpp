@@ -358,8 +358,6 @@ void IBVS::update_Le_row(int n, double z_hat)
 
 void IBVS::update_Le(double z_hat)
 {
-
-
 	IBVS::update_Le_row(1,z_hat);
 	IBVS::update_Le_row(2,z_hat);
 	IBVS::update_Le_row(3,z_hat);
