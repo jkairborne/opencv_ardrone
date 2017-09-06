@@ -102,7 +102,7 @@ double IBVS::distance_calc(cv::Point2f pt1, cv::Point2f pt2)
 } // End distance_calc
 
 
-void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
+double IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
 {
     int numpts = fourCorners.size();
     std::vector<cv::Point2f> desPt2f(4);
@@ -125,18 +125,22 @@ void IBVS::rearrangeDesPts(std::vector<cv::Point2f> fourCorners)
     if(angleDiff >= 3*M_PI/4 || angleDiff < -3*M_PI/4)
     {
         calc_desiredPts(offsetx,offsety,M_PI);
+        return M_PI;
     }
     else if(angleDiff >= M_PI/4)
     {
         calc_desiredPts(offsetx,offsety,M_PI/2);
+        return M_PI/2;
     }
     else if(angleDiff <= -M_PI/4)
     {
         calc_desiredPts(offsetx,offsety,-M_PI/2);
+        return -M_PI/2;
     }
     else
     {
         calc_desiredPts(offsetx,offsety);
+        return 0;
     }
     // We only want this function to be called once to rearrange.
     // It is set to true if the chessboard is lost from the image, back to false here.

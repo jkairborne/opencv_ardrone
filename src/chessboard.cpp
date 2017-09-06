@@ -21,7 +21,7 @@
 #include <algorithm>
 #include "navdata_cb_ardrone.h"
 #include "geometry_msgs/Twist.h"
-#include "std_msgs/Int16.h"
+#include "std_msgs/Int32.h"
 #include "opencv_ardrone/ImgData.h"
 
 static const int CBOARD_COL = 5;
@@ -37,13 +37,14 @@ class ImageConverter
     geometry_msgs::Twist empTwist;
 
     ros::Publisher pub2_;
-    std_msgs::Int16 cmdFromIBVS, cmdNotFromIBVS;
+    std_msgs::Int32 cmdFromIBVS, cmdNotFromIBVS;
 
     ros::Publisher pub3_;
     opencv_ardrone::ImgData ImgData;
 
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
+
     IBVS ibvs;
     navdata_cb_ardrone navdataCb;
     bool correctDesiredPts;
@@ -56,6 +57,12 @@ class ImageConverter
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
     void processImage(Mat &image);
     void fill_ImgData(uv virt, uv des, double z_hat);
+
+    double initRot;
+    ros::Subscriber pathSub_;
+    void pathCb(const std_msgs::Int32& msg);
+    int currPath;
+    ros::Time startRot;
 public:
     ImageConverter(const std::string &navdataCbTopic = "/ardrone/navdata")
         : it_(nh_)
@@ -66,8 +73,9 @@ public:
         image_sub_ = it_.subscribe("/ardrone/image_raw", 1,
            &ImageConverter::imageCb, this);
         pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_IBVS", 1);
-        pub2_ = nh_.advertise<std_msgs::Int16>("/src_cmd", 1);
+        pub2_ = nh_.advertise<std_msgs::Int32>("/src_cmd", 1);
         pub3_ = nh_.advertise<opencv_ardrone::ImgData>("/img_data", 1);
+        pathSub_ = nh_.subscribe("/path", 1, &ImageConverter::pathCb, this);
         cmdFromIBVS.data = 2;
         cmdNotFromIBVS.data = 1;
         count=0;
@@ -117,9 +125,26 @@ void ImageConverter::processImage(Mat &image)
 
         if(correctDesiredPts)
         {
-            ibvs.rearrangeDesPts(fourCorners);
+            initRot = ibvs.rearrangeDesPts(fourCorners);
             correctDesiredPts = false;
             pub2_.publish(cmdFromIBVS);
+        }
+        if(currPath == 4)
+        {
+            std::cout << "desired path is 4\n";
+            ros::Time ct = ros::Time::now();
+            ros::Duration dt = ct-startRot;
+            std::cout << "desired path is 4" << "start time and now time are: " << startRot << " " << ct << "\n";
+            if (dt.toSec()<15)
+            {
+                std::cout << "dt in seconds : " << dt.toSec() << "\n";
+                ibvs.calc_desiredPts(40,28,initRot+(3.1415926*dt.toSec())/30);
+                std::cout << "new desired rotation: " << (initRot+(3.1415926*7.5)) << '\n';
+            }
+            else
+            {
+                ibvs.calc_desiredPts(40,28,initRot+(3.14159626/2));
+            }
         }
 
         // ibvs.calc_desiredPts(50,35);
@@ -161,7 +186,7 @@ void ImageConverter::processImage(Mat &image)
     imshow("Image2",image);
     if(!correctDesiredPts){pub2_.publish(cmdNotFromIBVS);}
     pub_.publish(empTwist); // if image no longer visible, send empty command
-    correctDesiredPts = true;
+    if(currPath!=4){correctDesiredPts = true;}
     cv::waitKey(3);
     }
 }
@@ -215,5 +240,14 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg)
     }
     storedImage = cv_ptr->image;
     processImage(storedImage);
+}
+
+void ImageConverter::pathCb(const std_msgs::Int32 &msg)
+{
+    currPath = msg.data;
+    if(currPath==4)
+    {
+        startRot = ros::Time::now();
+    }
 }
 

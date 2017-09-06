@@ -80,7 +80,7 @@ class IBVS {
     uv getDesPtsEig();
     uv getVImPtsEig();
     double getZ_est();
-    void rearrangeDesPts(std::vector<cv::Point2f> fourCorners);
+    double rearrangeDesPts(std::vector<cv::Point2f> fourCorners);
 };
 
 #endif // IBVS_H
