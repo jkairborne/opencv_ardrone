@@ -95,7 +95,7 @@ public:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "image_converter");
+    ros::init(argc, argv, "chessboard");
     ImageConverter ic;
     ros::spin();
     return 0;
