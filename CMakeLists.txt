@@ -181,6 +181,9 @@ target_link_libraries(rec_video ${catkin_LIBRARIES})
 add_executable(chessboard src/chessboard.cpp ${HEADER_SOURCES})
 target_link_libraries(chessboard ${catkin_LIBRARIES})
 
+add_executable(imageDisplay src/imageDisplay.cpp)
+target_link_libraries(imageDisplay ${catkin_LIBRARIES})
+
 #add_executable(hsvselector src/hsvselector.cpp)
 #target_link_libraries(hsvselector ${catkin_LIBRARIES})
 #add_executable(make_video src/make_video.cpp)
